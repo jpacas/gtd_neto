@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "a650835b1b4a35ea19664f02",
+      "input": "Pagar a Vale",
+      "title": null,
+      "kind": null,
+      "list": "projects",
+      "context": null,
+      "nextAction": null,
+      "notes": null,
+      "status": "unprocessed",
+      "createdAt": "2026-02-08T02:44:12.506Z",
+      "updatedAt": "2026-02-08T02:44:21.478Z"
+    },
+    {
+      "id": "fc1fcd77bf2363af771e31d9",
+      "input": "Enviar correos",
+      "title": null,
+      "kind": null,
+      "list": "inbox",
+      "context": null,
+      "nextAction": null,
+      "notes": null,
+      "status": "unprocessed",
+      "createdAt": "2026-02-08T02:43:58.858Z",
+      "updatedAt": "2026-02-08T02:43:58.858Z"
+    }
+  ]
+}

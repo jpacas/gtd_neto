@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-semibold">GTD (OpenClaw)</h1>
+        <p class="text-sm text-slate-600">Inbox → procesar → listas</p>
+      </div>
+      <nav class="text-sm flex flex-wrap gap-2">
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/">Dashboard</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/inbox">Inbox</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/next">Next</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/projects">Projects</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/waiting">Waiting</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/someday">Someday</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/calendar">Calendar</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/reference">Reference</a>
+      </nav>
+    </div>
+
+    <% if (flash?.error) { %>
+      <div class="mt-4 p-3 rounded-lg bg-red-50 text-red-800 text-sm border border-red-200"><%= flash.error %></div>
+    <% } %>
+    <% if (flash?.info) { %>
+      <div class="mt-4 p-3 rounded-lg bg-blue-50 text-blue-800 text-sm border border-blue-200"><%= flash.info %></div>
+    <% } %>
+
+    <main class="mt-6">
+      <%- body %>
+    </main>
+
+    <footer class="mt-10 text-xs text-slate-500">
+      <p>Consejo: mantené este servicio detrás de un reverse proxy con HTTPS si lo expones.</p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+  <% for (const c of cards) { %>
+    <a href="<%= c.href %>" class="bg-white border rounded-xl p-4 hover:bg-slate-50">
+      <div class="text-sm text-slate-600"><%= c.label %></div>
+      <div class="text-2xl font-semibold mt-1"><%= c.count %></div>
+    </a>
+  <% } %>
+</div>
+
+<div class="mt-6 bg-white border rounded-xl p-5">
+  <h2 class="text-lg font-semibold">Captura rápida</h2>
+  <form method="POST" action="/inbox/add" class="mt-3 space-y-3">
+    <textarea name="input" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe cualquier pendiente o idea..."></textarea>
+    <% if (needApiKey) { %>
+      <input name="apiKey" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="API key" />
+    <% } %>
+    <button class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Guardar en Inbox</button>
+  </form>
+</div>
