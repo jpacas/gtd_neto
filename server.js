@@ -61,6 +61,23 @@ function sortByCreatedDesc(a, b) {
   return String(b.createdAt).localeCompare(String(a.createdAt));
 }
 
+function applyListFilters(items, query) {
+  const q = String(query?.q || '').trim().toLowerCase();
+  const ctx = String(query?.ctx || '').trim().toLowerCase();
+
+  let out = items;
+  if (q) {
+    out = out.filter(i => {
+      const hay = [i.title, i.input, i.notes, i.nextAction, i.context].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+  if (ctx) {
+    out = out.filter(i => String(i.context || '').toLowerCase().includes(ctx));
+  }
+  return { out, q, ctx };
+}
+
 app.get('/', async (req, res) => {
   const db = await loadDb();
   const items = db.items || [];
@@ -74,7 +91,10 @@ app.get('/', async (req, res) => {
     reference: items.filter(i => i.list === 'reference' && i.status !== 'done').length,
   };
 
+  const todayCount = items.filter(i => i.status !== 'done' && (i.list === 'next' || i.list === 'calendar')).length;
+
   const cards = [
+    { label: 'Hoy', count: todayCount, href: '/today' },
     { label: 'Inbox', count: counts.inbox, href: '/inbox' },
     { label: 'Next', count: counts.next, href: '/next' },
     { label: 'Projects', count: counts.projects, href: '/projects' },
@@ -105,7 +125,8 @@ app.post('/inbox/add', requireApiKey, async (req, res) => {
 
 app.get('/inbox', async (req, res) => {
   const db = await loadDb();
-  const items = (db.items || []).filter(i => i.list === 'inbox' && i.status !== 'done').sort(sortByCreatedDesc);
+  const base = (db.items || []).filter(i => i.list === 'inbox' && i.status !== 'done').sort(sortByCreatedDesc);
+  const { out: items, q, ctx } = applyListFilters(base, req.query);
 
   return renderPage(res, 'list', {
     title: 'Inbox',
@@ -115,6 +136,9 @@ app.get('/inbox', async (req, res) => {
     showCapture: true,
     needApiKey: Boolean(APP_API_KEY),
     apiKey: '',
+    q,
+    ctx,
+    basePath: '/inbox',
   });
 });
 
@@ -169,7 +193,8 @@ app.post('/inbox/:id/process', requireApiKey, async (req, res) => {
 function makeListRoute(listName, heading) {
   app.get(`/${listName}`, async (req, res) => {
     const db = await loadDb();
-    const items = (db.items || []).filter(i => i.list === listName && i.status !== 'done').sort(sortByCreatedDesc);
+    const base = (db.items || []).filter(i => i.list === listName && i.status !== 'done').sort(sortByCreatedDesc);
+    const { out: items, q, ctx } = applyListFilters(base, req.query);
     return renderPage(res, 'list', {
       title: heading,
       heading,
@@ -178,9 +203,33 @@ function makeListRoute(listName, heading) {
       showCapture: true,
       needApiKey: Boolean(APP_API_KEY),
       apiKey: '',
+      q,
+      ctx,
+      basePath: `/${listName}`,
     });
   });
 }
+
+app.get('/today', async (req, res) => {
+  const db = await loadDb();
+  const base = (db.items || [])
+    .filter(i => i.status !== 'done' && (i.list === 'next' || i.list === 'calendar'))
+    .sort(sortByCreatedDesc);
+  const { out: items, q, ctx } = applyListFilters(base, req.query);
+
+  return renderPage(res, 'list', {
+    title: 'Hoy',
+    heading: 'Hoy (Next + Calendar)',
+    items,
+    lists: listOptions(),
+    showCapture: false,
+    needApiKey: Boolean(APP_API_KEY),
+    apiKey: '',
+    q,
+    ctx,
+    basePath: '/today',
+  });
+});
 
 makeListRoute('next', 'Next Actions');
 makeListRoute('projects', 'Projects');
