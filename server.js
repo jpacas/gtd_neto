@@ -310,6 +310,8 @@ app.get('/delegar', async (req, res) => {
   const db = await loadDb();
   const groupBy = String(req.query?.groupBy || 'date') === 'owner' ? 'owner' : 'date';
   const ownerFilter = String(req.query?.owner || '').trim().toLowerCase();
+  const saved = String(req.query?.saved || '') === '1';
+  const error = String(req.query?.error || '');
 
   const baseItems = (db.items || [])
     .filter(i => i.list === 'delegar' && i.status !== 'done')
@@ -343,6 +345,8 @@ app.get('/delegar', async (req, res) => {
     groups,
     groupBy,
     ownerFilter: String(req.query?.owner || ''),
+    saved,
+    error,
     needApiKey: Boolean(APP_API_KEY),
     apiKey: '',
   });
@@ -355,18 +359,22 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
 
   const db = await loadDb();
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
-  if (idx === -1) return res.redirect('/delegar');
+  if (idx === -1) return res.redirect('/delegar?error=not_found');
+
+  if (!delegatedFor || !delegatedTo) {
+    return res.redirect('/delegar?error=missing_fields');
+  }
 
   const current = db.items[idx];
   const title = String(req.body?.title || current.title || current.input || '').trim();
   db.items[idx] = updateItem(current, {
     title,
-    delegatedFor: delegatedFor || null,
-    delegatedTo: delegatedTo || null,
+    delegatedFor,
+    delegatedTo,
   });
 
   await saveDb(db);
-  return res.redirect('/delegar');
+  return res.redirect('/delegar?saved=1');
 });
 
 for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar')) {

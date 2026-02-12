@@ -6,6 +6,13 @@
   <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Ir a Collect</a>
 </div>
 
+<% if (saved) { %>
+  <div class="mt-4 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-sm text-green-700">Actividad delegada guardada ✅</div>
+<% } %>
+<% if (error === 'missing_fields') { %>
+  <div class="mt-4 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">Completa responsable y fecha antes de guardar.</div>
+<% } %>
+
 <form method="GET" action="/delegar" class="mt-4 bg-white border rounded-xl p-3 flex flex-wrap items-end gap-2">
   <div>
     <label class="text-xs text-slate-500">Agrupar por</label>
