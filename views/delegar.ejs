@@ -1,0 +1,54 @@
+<div class="flex items-center justify-between gap-3">
+  <div>
+    <h2 class="text-lg font-semibold">Delegar</h2>
+    <p class="text-sm text-slate-600 mt-1">Cada actividad delegada debe tener fecha y responsable.</p>
+  </div>
+  <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Ir a Collect</a>
+</div>
+
+<form method="GET" action="/delegar" class="mt-4 bg-white border rounded-xl p-3 flex flex-wrap items-end gap-2">
+  <div>
+    <label class="text-xs text-slate-500">Agrupar por</label>
+    <select name="groupBy" class="block border rounded-lg px-2 py-1.5 text-sm">
+      <option value="date" <%= groupBy === 'date' ? 'selected' : '' %>>Fecha</option>
+      <option value="owner" <%= groupBy === 'owner' ? 'selected' : '' %>>Responsable</option>
+    </select>
+  </div>
+  <div>
+    <label class="text-xs text-slate-500">Filtrar responsable</label>
+    <input type="text" name="owner" value="<%= ownerFilter || '' %>" placeholder="Ej: Ana" class="block border rounded-lg px-2 py-1.5 text-sm" />
+  </div>
+  <button class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Aplicar</button>
+</form>
+
+<div class="mt-4 space-y-3">
+  <% if (!items.length) { %>
+    <div class="bg-white border rounded-xl p-5 text-sm text-slate-600">No hay actividades en Delegar.</div>
+  <% } %>
+
+  <% for (const g of groups) { %>
+    <div class="bg-white border rounded-xl overflow-hidden">
+      <div class="px-3 py-2 text-xs text-slate-600 bg-slate-50 border-b"><%= g.label %></div>
+      <% for (const it of g.rows) { %>
+        <div class="px-3 py-2 border-b last:border-b-0">
+          <form method="POST" action="/delegar/<%= it.id %>/update" class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+
+            <div class="md:col-span-5">
+              <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2.5 py-2 text-sm" />
+            </div>
+            <div class="md:col-span-3">
+              <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-full border rounded-md px-2.5 py-2 text-sm" required />
+            </div>
+            <div class="md:col-span-3">
+              <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="w-full border rounded-md px-2.5 py-2 text-sm" required />
+            </div>
+            <div class="md:col-span-1 md:text-right">
+              <button class="w-full md:w-auto text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Guardar</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  <% } %>
+</div>

@@ -306,7 +306,70 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
   return res.redirect('/agendar');
 });
 
-for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar')) {
+app.get('/delegar', async (req, res) => {
+  const db = await loadDb();
+  const groupBy = String(req.query?.groupBy || 'date') === 'owner' ? 'owner' : 'date';
+  const ownerFilter = String(req.query?.owner || '').trim().toLowerCase();
+
+  const baseItems = (db.items || [])
+    .filter(i => i.list === 'delegar' && i.status !== 'done')
+    .map(i => ({
+      ...i,
+      delegatedTo: String(i.delegatedTo || '').trim(),
+      delegatedFor: String(i.delegatedFor || '').trim(),
+    }))
+    .filter(i => !ownerFilter || i.delegatedTo.toLowerCase().includes(ownerFilter));
+
+  const items = baseItems.sort((a, b) => {
+    const ad = String(a.delegatedFor || '9999-12-31');
+    const bd = String(b.delegatedFor || '9999-12-31');
+    return ad.localeCompare(bd);
+  });
+
+  const groupsMap = new Map();
+  for (const item of items) {
+    const key = groupBy === 'owner'
+      ? (item.delegatedTo || 'Sin responsable')
+      : (item.delegatedFor || 'Sin fecha');
+    if (!groupsMap.has(key)) groupsMap.set(key, []);
+    groupsMap.get(key).push(item);
+  }
+
+  const groups = Array.from(groupsMap.entries()).map(([label, rows]) => ({ label, rows }));
+
+  return renderPage(res, 'delegar', {
+    title: 'Delegar',
+    items,
+    groups,
+    groupBy,
+    ownerFilter: String(req.query?.owner || ''),
+    needApiKey: Boolean(APP_API_KEY),
+    apiKey: '',
+  });
+});
+
+app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const delegatedFor = String(req.body?.delegatedFor || '').trim();
+  const delegatedTo = String(req.body?.delegatedTo || '').trim();
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
+  if (idx === -1) return res.redirect('/delegar');
+
+  const current = db.items[idx];
+  const title = String(req.body?.title || current.title || current.input || '').trim();
+  db.items[idx] = updateItem(current, {
+    title,
+    delegatedFor: delegatedFor || null,
+    delegatedTo: delegatedTo || null,
+  });
+
+  await saveDb(db);
+  return res.redirect('/delegar');
+});
+
+for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar')) {
   app.get(`/${d.key}`, async (req, res) => {
     const db = await loadDb();
     const items = (db.items || [])
