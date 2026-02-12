@@ -306,6 +306,59 @@ makeListRoute('someday', 'Someday / Maybe', 'Ideas sin compromiso actual. Revís
 makeListRoute('calendar', 'Schedule (Calendar)', 'Aquí solo van compromisos con fecha/hora real (hard landscape).', ['/schedule']);
 makeListRoute('reference', 'Reference', 'Material de consulta, no acciones.');
 
+app.get('/review', async (req, res) => {
+  const db = await loadDb();
+  const items = db.items || [];
+
+  const openProjects = items.filter(i => i.list === 'projects' && i.status !== 'done');
+  const nextActions = items.filter(i => i.list === 'next' && i.status !== 'done');
+  const waiting = items.filter(i => i.list === 'waiting' && i.status !== 'done');
+  const someday = items.filter(i => i.list === 'someday' && i.status !== 'done');
+  const inbox = items.filter(i => i.list === 'inbox' && i.status !== 'done');
+
+  const projectIds = new Set(openProjects.map(p => p.id));
+  const projectsWithoutNext = openProjects.filter(p => {
+    const pTitle = String(p.title || '').toLowerCase();
+    return !nextActions.some(a => String(a.notes || '').toLowerCase().includes(`origen: ${pTitle}`));
+  });
+
+  return renderPage(res, 'review', {
+    title: 'Weekly Review',
+    stats: {
+      inbox: inbox.length,
+      next: nextActions.length,
+      projects: openProjects.length,
+      waiting: waiting.length,
+      someday: someday.length,
+      projectsWithoutNext: projectsWithoutNext.length,
+    },
+    projectsWithoutNext,
+    needApiKey: Boolean(APP_API_KEY),
+    apiKey: '',
+  });
+});
+
+app.post('/projects/:id/create-next', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const db = await loadDb();
+  const project = (db.items || []).find(i => i.id === id && i.list === 'projects' && i.status !== 'done');
+  if (!project) return res.redirect('/review');
+
+  const step = String(req.body?.step || '').trim() || `Definir siguiente paso de: ${project.title || project.input}`;
+  const action = updateItem(newItem({ input: step }), {
+    title: step,
+    kind: 'action',
+    list: 'next',
+    context: project.context || null,
+    notes: `Origen: ${project.title || project.input}`,
+    status: 'processed',
+  });
+
+  db.items = [action, ...(db.items || [])];
+  await saveDb(db);
+  return res.redirect('/review');
+});
+
 app.post('/items/:id/move', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
   const list = String(req.body?.list || '').trim();
