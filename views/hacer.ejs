@@ -22,13 +22,20 @@
           <button class="text-xs px-2 py-1.5 rounded border bg-white hover:bg-slate-50">Guardar</button>
         </form>
 
-        <div class="hacer-view-row flex-1 min-w-0 flex items-center gap-2" data-id="<%= it.id %>">
-          <span class="text-sm truncate"><%= it.title || it.input %></span>
-          <span class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 shrink-0">U <%= it.urgency || 3 %></span>
-          <span class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 shrink-0">I <%= it.importance || 3 %></span>
-        </div>
+        <form method="POST" action="/hacer/<%= it.id %>/update" class="hacer-view-row flex-1 min-w-0 flex items-center gap-2" data-id="<%= it.id %>">
+          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+          <input type="hidden" name="title" value="<%= it.title || it.input %>" />
+          <input type="hidden" name="urgency" value="<%= it.urgency || 3 %>" />
+          <input type="hidden" name="importance" value="<%= it.importance || 3 %>" />
+          <input type="hidden" name="estimateMin" value="<%= it.estimateMin || 10 %>" />
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">✏️</button>
+          <button type="button" class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0 quick-edit" data-field="urgency" data-value="<%= it.urgency || 3 %>" title="Editar urgencia">U <%= it.urgency || 3 %></button>
+          <button type="button" class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0 quick-edit" data-field="importance" data-value="<%= it.importance || 3 %>" title="Editar importancia">I <%= it.importance || 3 %></button>
+
+          <span class="text-sm truncate"><%= it.title || it.input %></span>
+        </form>
+
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar texto">✏️</button>
       </div>
 
       <% if (!it.actionableOk) { %>
@@ -54,6 +61,26 @@
           row.classList.add('hidden');
           const input = edit.querySelector('input[name="title"]');
           if (input) input.focus();
+        });
+      });
+
+      root.querySelectorAll('.quick-edit').forEach((btn) => {
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => {
+          const field = btn.dataset.field;
+          const current = Number(btn.dataset.value || 3);
+          const label = field === 'urgency' ? 'Urgencia (1-5)' : 'Importancia (1-5)';
+          const next = Number(window.prompt(label, String(current)));
+          if (!Number.isFinite(next)) return;
+          if (next < 1 || next > 5) return;
+
+          const form = btn.closest('form');
+          if (!form) return;
+          const hidden = form.querySelector(`input[name="${field}"]`);
+          if (!hidden) return;
+          hidden.value = String(next);
+          form.submit();
         });
       });
     }
