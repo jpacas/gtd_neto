@@ -108,7 +108,18 @@ app.use((req, res, next) => {
 app.get('/login', async (req, res) => {
   if (!USE_SUPABASE) return res.redirect('/');
   if (req.auth?.user) return res.redirect('/');
-  return renderPage(res, 'login', { title: 'Login', needApiKey: false, apiKey: '' });
+  return renderPage(res, 'login', {
+    title: 'Login',
+    needApiKey: false,
+    apiKey: '',
+    message: String(req.query?.message || ''),
+  });
+});
+
+app.get('/signup', async (req, res) => {
+  if (!USE_SUPABASE) return res.redirect('/');
+  if (req.auth?.user) return res.redirect('/');
+  return renderPage(res, 'signup', { title: 'Registro', needApiKey: false, apiKey: '' });
 });
 
 app.post('/auth/login', async (req, res) => {
@@ -133,6 +144,36 @@ app.post('/auth/login', async (req, res) => {
   return res.redirect('/');
 });
 
+app.post('/auth/signup', async (req, res) => {
+  if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
+
+  const email = String(req.body?.email || '').trim();
+  const password = String(req.body?.password || '');
+
+  const { error } = await supabaseAuth.auth.signUp({ email, password });
+  if (error) {
+    return renderPage(res, 'signup', {
+      title: 'Registro',
+      flash: { error: error.message || 'No se pudo crear la cuenta.' },
+      needApiKey: false,
+      apiKey: '',
+    });
+  }
+
+  return res.redirect('/login?message=Cuenta creada. Revisa tu correo para confirmación si aplica.');
+});
+
+app.post('/auth/forgot', async (req, res) => {
+  if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
+
+  const email = String(req.body?.email || '').trim();
+  if (!email) return res.redirect('/login?message=Ingresa tu correo para recuperar contraseña.');
+
+  const redirectTo = `${req.protocol}://${req.get('host')}/login?message=Contraseña actualizada. Ya puedes iniciar sesión.`;
+  await supabaseAuth.auth.resetPasswordForEmail(email, { redirectTo });
+  return res.redirect('/login?message=Si el correo existe, enviamos enlace de recuperación.');
+});
+
 app.post('/auth/logout', (req, res) => {
   res.clearCookie('sb_access_token', { path: '/' });
   res.clearCookie('sb_refresh_token', { path: '/' });
@@ -140,7 +181,7 @@ app.post('/auth/logout', (req, res) => {
 });
 
 app.use((req, res, next) => {
-  const publicPaths = ['/login', '/auth/login', '/auth/logout', '/healthz', '/favicon.ico', '/favicon.png'];
+  const publicPaths = ['/login', '/signup', '/auth/login', '/auth/signup', '/auth/forgot', '/auth/logout', '/healthz', '/favicon.ico', '/favicon.png'];
   if (publicPaths.includes(req.path) || req.path.startsWith('/docs/')) return next();
   return requireAuth(req, res, next);
 });

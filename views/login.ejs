@@ -2,6 +2,10 @@
   <h2 class="text-lg font-semibold">Login GTD_Neto</h2>
   <p class="text-sm text-slate-600 mt-1">Accede con tu usuario de Supabase.</p>
 
+  <% if (message) { %>
+    <div class="mt-3 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-sm text-blue-700"><%= message %></div>
+  <% } %>
+
   <form method="POST" action="/auth/login" class="mt-4 space-y-3">
     <div>
       <label class="text-xs text-slate-500">Email</label>
@@ -13,4 +17,15 @@
     </div>
     <button class="w-full rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Entrar</button>
   </form>
+
+  <form method="POST" action="/auth/forgot" class="mt-4 pt-4 border-t space-y-2">
+    <div class="text-xs text-slate-500">¿Olvidaste tu contraseña?</div>
+    <input type="email" name="email" placeholder="Tu correo" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+    <button class="w-full rounded-lg border bg-white px-4 py-2 text-sm hover:bg-slate-50">Enviar recuperación</button>
+  </form>
+
+  <div class="mt-4 text-sm text-slate-600">
+    ¿No tienes cuenta?
+    <a href="/signup" class="text-blue-600 hover:underline">Regístrate</a>
+  </div>
 </div>
