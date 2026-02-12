@@ -15,11 +15,36 @@
         </div>
       </div>
 
-      <form method="POST" action="/terminado/<%= it.id %>/comment" class="mt-2 flex gap-2 items-center">
+      <form method="POST" action="/terminado/<%= it.id %>/comment" class="mt-2" data-autosave-comment="1">
         <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-        <input type="text" name="completionComment" value="<%= it.completionComment || '' %>" placeholder="Comentario opcional" class="flex-1 border rounded-lg px-2.5 py-1.5 text-sm" />
-        <button class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Guardar</button>
+        <input type="text" name="completionComment" value="<%= it.completionComment || '' %>" placeholder="Comentario opcional" class="w-full border rounded-lg px-2.5 py-1.5 text-sm" />
       </form>
     </div>
   <% } %>
 </div>
+
+<script>
+  (function () {
+    document.querySelectorAll('form[data-autosave-comment="1"]').forEach((form) => {
+      const input = form.querySelector('input[name="completionComment"]');
+      if (!input) return;
+      let initial = input.value;
+
+      function submitIfChanged() {
+        const current = input.value;
+        if (current === initial) return;
+        initial = current;
+        form.submit();
+      }
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitIfChanged();
+        }
+      });
+
+      input.addEventListener('blur', submitIfChanged);
+    });
+  })();
+</script>
