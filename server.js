@@ -310,7 +310,6 @@ app.get('/delegar', async (req, res) => {
   const db = await loadDb();
   const groupBy = String(req.query?.groupBy || 'date') === 'owner' ? 'owner' : 'date';
   const ownerFilter = String(req.query?.owner || '').trim().toLowerCase();
-  const saved = String(req.query?.saved || '') === '1';
   const error = String(req.query?.error || '');
 
   const baseItems = (db.items || [])
@@ -345,7 +344,6 @@ app.get('/delegar', async (req, res) => {
     groups,
     groupBy,
     ownerFilter: String(req.query?.owner || ''),
-    saved,
     error,
     needApiKey: Boolean(APP_API_KEY),
     apiKey: '',
@@ -374,7 +372,7 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
   });
 
   await saveDb(db);
-  return res.redirect('/delegar?saved=1');
+  return res.redirect('/delegar');
 });
 
 for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar')) {
