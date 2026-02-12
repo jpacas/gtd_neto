@@ -7,38 +7,30 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-900">
-  <div class="max-w-5xl mx-auto p-6">
+  <div class="max-w-6xl mx-auto p-6">
     <div class="flex items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-semibold">GTD_Neto</h1>
-        <p class="text-sm text-slate-600">Inbox → procesar → listas</p>
+        <p class="text-sm text-slate-600">Dashboard general + flujo Collect -> Destino</p>
       </div>
       <nav class="text-sm flex flex-wrap gap-2">
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/">Dashboard</a>
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/collect">Collect</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/schedule">Schedule</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/do">Do</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/waiting">Waiting</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/someday">Someday</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/projects">Projects</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/review">Weekly Review</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/hacer">Hacer</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/agendar">Agendar</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/delegar">Delegar</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/desglosar">Desglosar</a>
+        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/no-hacer">No hacer</a>
       </nav>
     </div>
 
     <% if (flash?.error) { %>
       <div class="mt-4 p-3 rounded-lg bg-red-50 text-red-800 text-sm border border-red-200"><%= flash.error %></div>
     <% } %>
-    <% if (flash?.info) { %>
-      <div class="mt-4 p-3 rounded-lg bg-blue-50 text-blue-800 text-sm border border-blue-200"><%= flash.info %></div>
-    <% } %>
 
     <main class="mt-6">
       <%- body %>
     </main>
-
-    <footer class="mt-10 text-xs text-slate-500">
-      <p>Consejo: mantené este servicio detrás de un reverse proxy con HTTPS si lo expones.</p>
-    </footer>
   </div>
 </body>
 </html>

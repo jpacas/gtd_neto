@@ -1,0 +1,22 @@
+<h2 class="text-lg font-semibold"><%= section.label %></h2>
+<p class="text-sm text-slate-600 mt-1"><%= section.hint %></p>
+
+<div class="mt-4 space-y-3">
+  <% if (!items.length) { %>
+    <div class="text-sm text-slate-600">No hay elementos aquí por ahora.</div>
+  <% } %>
+
+  <% for (const it of items) { %>
+    <div class="bg-white border rounded-xl p-4">
+      <div class="font-medium"><%= it.title || it.input %></div>
+      <div class="text-sm text-slate-600 mt-1 whitespace-pre-wrap"><%= it.input %></div>
+      <% if (it.notes) { %>
+        <div class="text-xs text-slate-500 mt-2">Notas: <%= it.notes %></div>
+      <% } %>
+      <form method="POST" action="/items/<%= it.id %>/delete" onsubmit="return confirm('¿Eliminar elemento?');" class="mt-3">
+        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+        <button class="text-sm px-3 py-1 rounded-lg bg-white border text-red-700 hover:bg-red-50">Eliminar</button>
+      </form>
+    </div>
+  <% } %>
+</div>
