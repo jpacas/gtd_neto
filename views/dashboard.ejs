@@ -8,12 +8,33 @@
 </div>
 
 <div class="mt-6 bg-white border rounded-xl p-5">
-  <h2 class="text-lg font-semibold">Captura rápida</h2>
+  <h2 class="text-lg font-semibold">Collect (Captura rápida)</h2>
   <form method="POST" action="/inbox/add" class="mt-3 space-y-3">
-    <textarea name="input" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe cualquier pendiente o idea..."></textarea>
+    <textarea name="input" rows="3" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe cualquier pendiente, proyecto o idea..."></textarea>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <div>
+        <label class="text-xs text-slate-500">Enviar a</label>
+        <select name="destination" class="w-full border rounded-lg px-3 py-2">
+          <option value="inbox">inbox</option>
+          <option value="next">next</option>
+          <option value="projects">projects</option>
+          <option value="waiting">waiting</option>
+          <option value="someday">someday</option>
+          <option value="calendar">calendar</option>
+          <option value="reference">reference</option>
+        </select>
+      </div>
+
+      <label class="md:col-span-2 flex items-center gap-2 text-sm border rounded-lg px-3 py-2 bg-slate-50">
+        <input type="checkbox" name="aiBreakdown" />
+        Desglosar con IA en micro-acciones (<10 min)
+      </label>
+    </div>
+
     <% if (needApiKey) { %>
       <input name="apiKey" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="API key" />
     <% } %>
-    <button class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Guardar en Inbox</button>
+    <button class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Guardar</button>
   </form>
 </div>

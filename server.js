@@ -3,7 +3,7 @@ import express from 'express';
 import ejs from 'ejs';
 
 import { loadDb, saveDb, newItem, updateItem } from './lib/store.js';
-import { runOpenClaw, buildGtdExtractPrompt, safeParseJsonFromText } from './lib/openclaw.js';
+import { runOpenClaw, buildGtdExtractPrompt, buildBreakdownPrompt, safeParseJsonFromText } from './lib/openclaw.js';
 
 const app = express();
 
@@ -113,14 +113,84 @@ app.get('/', async (req, res) => {
 
 app.post('/inbox/add', requireApiKey, async (req, res) => {
   const input = String(req.body?.input || '').trim();
+  const destination = String(req.body?.destination || 'inbox').trim();
+  const aiBreakdown = String(req.body?.aiBreakdown || '') === 'on';
+
   if (!input) return res.redirect('/');
+  if (!listOptions().includes(destination)) return res.status(400).send('Bad destination');
 
   const db = await loadDb();
-  const item = newItem({ input });
+
+  if (aiBreakdown) {
+    try {
+      const prompt = buildBreakdownPrompt({ input, destination });
+      const { text } = await runOpenClaw({
+        prompt,
+        sessionId: OPENCLAW_AGENT_SESSION,
+        agentId: OPENCLAW_AGENT_ID,
+        timeoutSeconds: OPENCLAW_TIMEOUT_SECONDS,
+        thinking: OPENCLAW_THINKING,
+      });
+
+      const parsed = safeParseJsonFromText(text);
+      const steps = Array.isArray(parsed?.steps) ? parsed.steps.filter(Boolean).slice(0, 8) : [];
+      const preferredList = listOptions().includes(String(parsed?.recommendedList || ''))
+        ? String(parsed.recommendedList)
+        : destination;
+
+      const created = [];
+
+      // Si parece proyecto, guardamos también el padre
+      if (String(parsed?.kind || '') === 'project') {
+        const parent = updateItem(newItem({ input }), {
+          title: parsed?.title || input,
+          kind: 'project',
+          list: preferredList === 'inbox' ? 'projects' : preferredList,
+          context: parsed?.context ?? null,
+          status: 'processed',
+          notes: 'Proyecto desglosado por IA en micro-acciones (<10 min).',
+        });
+        created.push(parent);
+      }
+
+      const targetListForSteps = destination === 'projects' ? 'next' : (preferredList === 'inbox' ? 'next' : preferredList);
+      const finalSteps = steps.length ? steps : [parsed?.title || input];
+
+      for (const step of finalSteps) {
+        const it = updateItem(newItem({ input: String(step) }), {
+          title: String(step),
+          kind: 'action',
+          list: targetListForSteps,
+          context: parsed?.context ?? null,
+          nextAction: null,
+          notes: `Origen: ${input}`,
+          status: 'processed',
+        });
+        created.push(it);
+      }
+
+      db.items = [...created, ...(db.items || [])];
+      await saveDb(db);
+      return res.redirect(targetListForSteps === 'inbox' ? '/inbox' : `/${targetListForSteps}`);
+    } catch (e) {
+      // fallback silencioso a captura normal
+    }
+  }
+
+  // Captura normal (sin IA)
+  let item = newItem({ input });
+  if (destination !== 'inbox') {
+    item = updateItem(item, {
+      title: input,
+      kind: destination === 'projects' ? 'project' : 'action',
+      list: destination,
+      status: 'processed',
+    });
+  }
+
   db.items = [item, ...(db.items || [])];
   await saveDb(db);
-
-  return res.redirect('/inbox');
+  return res.redirect(destination === 'inbox' ? '/inbox' : `/${destination}`);
 });
 
 app.get('/inbox', async (req, res) => {
