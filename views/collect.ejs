@@ -21,7 +21,7 @@
 
   <% for (const it of items) { %>
     <div class="px-3 py-2 <%= it.actionableOk ? '' : 'bg-red-50' %>">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center justify-between gap-2">
         <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input name="input" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1 text-sm" />
@@ -29,20 +29,18 @@
         </form>
 
         <div class="collect-text-row flex-1 min-w-0" data-id="<%= it.id %>">
-          <span class="text-sm truncate"><%= it.title || it.input %></span>
+          <span class="text-sm"><%= it.title || it.input %></span>
         </div>
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">
-          ✏️
-        </button>
-
-        <form method="POST" action="/collect/<%= it.id %>/send" class="flex items-center gap-1">
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-          <% for (const d of destinations) { %>
-            <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button>
-          <% } %>
-        </form>
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">✏️</button>
       </div>
+
+      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+        <% for (const d of destinations) { %>
+          <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button>
+        <% } %>
+      </form>
 
       <% if (!it.actionableOk) { %>
         <div class="text-[11px] text-red-700 mt-1"><%= it.actionableFeedback || 'Redacción poco accionable' %></div>
@@ -84,19 +82,19 @@
       const wrapper = document.createElement('div');
       wrapper.className = `px-3 py-2 ${actionableOk ? '' : 'bg-red-50'}`;
       wrapper.innerHTML = `
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2">
           <form method="POST" action="/collect/${item.id}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${item.id}">
             <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
             <input name="input" class="w-full border rounded-md px-2 py-1 text-sm" />
             <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
           </form>
-          <div class="collect-text-row flex-1 min-w-0" data-id="${item.id}"><span class="text-sm truncate"></span></div>
+          <div class="collect-text-row flex-1 min-w-0" data-id="${item.id}"><span class="text-sm"></span></div>
           <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${item.id}" title="Editar">✏️</button>
-          <form method="POST" action="/collect/${item.id}/send" class="flex items-center gap-1">
-            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-            ${destinationButtons}
-          </form>
         </div>
+        <form method="POST" action="/collect/${item.id}/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+          ${destinationButtons}
+        </form>
         <div class="text-[11px] text-red-700 mt-1 ${actionableOk ? 'hidden' : ''}"></div>
       `;
       const val = item.title || item.input || '';
