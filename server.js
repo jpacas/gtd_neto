@@ -224,21 +224,8 @@ app.get('/hacer', async (req, res) => {
 });
 
 app.post('/hacer/add', requireApiKey, async (req, res) => {
-  const input = String(req.body?.input || '').trim();
-  if (!input) return res.redirect('/hacer');
-
-  const db = await loadDb();
-  const base = newItem({ input });
-  const item = updateItem(base, withHacerMeta(base, {
-    title: input,
-    kind: 'action',
-    list: 'hacer',
-    status: 'processed',
-  }));
-
-  db.items = [item, ...(db.items || [])];
-  await saveDb(db);
-  return res.redirect('/hacer');
+  // Regla: Hacer solo recibe items desde Collect
+  return res.status(405).type('text').send('Method not allowed: agrega en Collect y luego envía a Hacer.');
 });
 
 app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
