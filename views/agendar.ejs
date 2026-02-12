@@ -17,7 +17,7 @@
   <% } %>
 
   <% for (const it of items) { %>
-    <div class="px-3 py-2 border-b last:border-b-0 <%= it.scheduledFor ? '' : 'bg-amber-50' %>">
+    <div class="px-3 py-2 border-b last:border-b-0 <%= !it.actionableOk ? 'bg-red-50' : (it.scheduledFor ? '' : 'bg-amber-50') %>">
       <div class="flex items-center gap-2">
         <form method="POST" action="/agendar/<%= it.id %>/update" class="agendar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
@@ -41,6 +41,9 @@
 
       <% if (!it.scheduledFor) { %>
         <div class="text-[11px] text-amber-800 mt-1">Falta fecha. Asígnala directamente en el campo de fecha.</div>
+      <% } %>
+      <% if (!it.actionableOk) { %>
+        <div class="text-[11px] text-red-700 mt-1"><%= it.actionableFeedback || 'Mejorar redacción para que sea clara y accionable.' %></div>
       <% } %>
     </div>
   <% } %>

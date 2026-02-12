@@ -272,6 +272,7 @@ app.get('/agendar', async (req, res) => {
   const db = await loadDb();
   const items = (db.items || [])
     .filter(i => i.list === 'agendar' && i.status !== 'done')
+    .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
     .sort((a, b) => {
       const ad = String(a.scheduledFor || '0000-01-01');
       const bd = String(b.scheduledFor || '0000-01-01');
