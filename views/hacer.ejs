@@ -7,6 +7,11 @@
 </div>
 
 <div class="mt-4 rounded-xl border bg-white overflow-hidden" id="hacerList">
+  <div class="px-3 py-1.5 border-b bg-slate-50 text-[11px] text-slate-500 flex items-center gap-2">
+    <span class="w-10 text-center">U</span>
+    <span class="w-10 text-center">I</span>
+    <span>Actividad</span>
+  </div>
   <% if (!items.length) { %>
     <div class="p-5 text-sm text-slate-600">No hay acciones en Hacer. <a href="/collect" class="underline">Enviar desde Collect</a></div>
   <% } %>
@@ -29,8 +34,8 @@
           <input type="hidden" name="importance" value="<%= it.importance || 3 %>" />
           <input type="hidden" name="estimateMin" value="<%= it.estimateMin || 10 %>" />
 
-          <button type="button" class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0 quick-edit" data-field="urgency" data-value="<%= it.urgency || 3 %>" title="Editar urgencia">U <%= it.urgency || 3 %></button>
-          <button type="button" class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0 quick-edit" data-field="importance" data-value="<%= it.importance || 3 %>" title="Editar importancia">I <%= it.importance || 3 %></button>
+          <button type="button" class="w-10 text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0 quick-edit" data-field="urgency" data-value="<%= it.urgency || 3 %>" title="Editar urgencia"><%= it.urgency || 3 %></button>
+          <button type="button" class="w-10 text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0 quick-edit" data-field="importance" data-value="<%= it.importance || 3 %>" title="Editar importancia"><%= it.importance || 3 %></button>
 
           <span class="text-sm truncate"><%= it.title || it.input %></span>
         </form>
