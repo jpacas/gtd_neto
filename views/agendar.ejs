@@ -22,8 +22,7 @@
         <form method="POST" action="/agendar/<%= it.id %>/update" class="agendar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="hidden" name="title" value="<%= it.title || it.input %>" />
-          <button type="button" class="w-full text-xs px-2 py-1.5 rounded border bg-slate-50 hover:bg-slate-100 date-quick-edit" data-id="<%= it.id %>" data-date="<%= it.scheduledFor || '' %>"><%= it.scheduledFor || 'Sin fecha' %></button>
-          <input type="hidden" name="scheduledFor" value="<%= it.scheduledFor || '' %>" />
+          <input type="date" name="scheduledFor" value="<%= it.scheduledFor || '' %>" class="w-full text-xs px-2 py-1.5 rounded border bg-slate-50" required onchange="this.form.submit()" />
         </form>
 
         <form method="POST" action="/agendar/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 agendar-edit-form" data-id="<%= it.id %>">
@@ -41,7 +40,7 @@
       </div>
 
       <% if (!it.scheduledFor) { %>
-        <div class="text-[11px] text-amber-800 mt-1">Falta fecha. Haz click en “Sin fecha” para asignarla.</div>
+        <div class="text-[11px] text-amber-800 mt-1">Falta fecha. Asígnala directamente en el campo de fecha.</div>
       <% } %>
     </div>
   <% } %>
@@ -60,22 +59,6 @@
         view.classList.add('hidden');
         const input = edit.querySelector('input[name="title"]');
         if (input) input.focus();
-      });
-    });
-
-    document.querySelectorAll('.date-quick-edit').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const current = btn.dataset.date || '';
-        const next = window.prompt('Fecha (YYYY-MM-DD)', current);
-        if (next == null) return;
-        const value = String(next).trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
-        const form = btn.closest('form');
-        if (!form) return;
-        const hidden = form.querySelector('input[name="scheduledFor"]');
-        if (!hidden) return;
-        hidden.value = value;
-        form.submit();
       });
     });
   })();

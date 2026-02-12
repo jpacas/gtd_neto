@@ -1,5 +1,5 @@
 <h2 class="text-lg font-semibold">Collect</h2>
-<p class="text-sm text-slate-600 mt-1">Captura rápido. Si una actividad no está clara, se marca en rojo.</p>
+<p class="text-sm text-slate-600 mt-1">Captura rápido y decide destino.</p>
 
 <div class="mt-4 bg-white border rounded-xl p-4">
   <form method="POST" action="/collect/add" class="space-y-2" id="collectForm">
@@ -20,7 +20,7 @@
   <% } %>
 
   <% for (const it of items) { %>
-    <div class="px-3 py-2 <%= it.actionableOk ? '' : 'bg-red-50' %>">
+    <div class="px-3 py-2">
       <div class="flex items-center justify-between gap-2">
         <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
@@ -41,10 +41,6 @@
           <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button>
         <% } %>
       </form>
-
-      <% if (!it.actionableOk) { %>
-        <div class="text-[11px] text-red-700 mt-1"><%= it.actionableFeedback || 'Redacción poco accionable' %></div>
-      <% } %>
     </div>
   <% } %>
 </div>
@@ -78,9 +74,8 @@
     }
 
     function buildRow(item) {
-      const actionableOk = !!item.actionableOk;
       const wrapper = document.createElement('div');
-      wrapper.className = `px-3 py-2 ${actionableOk ? '' : 'bg-red-50'}`;
+      wrapper.className = 'px-3 py-2';
       wrapper.innerHTML = `
         <div class="flex items-center justify-between gap-2">
           <form method="POST" action="/collect/${item.id}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${item.id}">
@@ -95,39 +90,11 @@
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           ${destinationButtons}
         </form>
-        <div class="text-[11px] text-red-700 mt-1 ${actionableOk ? 'hidden' : ''}"></div>
       `;
       const val = item.title || item.input || '';
       wrapper.querySelector('.collect-text-row span').textContent = val;
       wrapper.querySelector('.collect-edit-form input[name="input"]').value = val;
-      if (!actionableOk) {
-        wrapper.querySelector('.text-red-700').textContent = item.actionableFeedback || 'Redacción poco accionable';
-      }
       return wrapper;
-    }
-
-    function evaluateActionability(text) {
-      const t = String(text || '').trim();
-      const words = t.split(/\s+/).filter(Boolean);
-      const first = (words[0] || '').toLowerCase();
-      const vague = ['hacer', 'ver', 'revisar tema', 'pendiente', 'trabajar', 'organizar'];
-      const startsWithInfinitive = /[aá]r$|er$|ir$/.test(first);
-      const hasEnoughWords = words.length >= 2;
-      const tooLong = t.length > 140;
-      const hasVaguePattern = vague.some(v => t.toLowerCase() === v || t.toLowerCase().startsWith(v + ' '));
-
-      let score = 0;
-      if (startsWithInfinitive) score += 40;
-      if (hasEnoughWords) score += 30;
-      if (!tooLong) score += 20;
-      if (!hasVaguePattern) score += 10;
-
-      const feedback = [];
-      if (!startsWithInfinitive) feedback.push('Empieza con un verbo en infinitivo.');
-      if (!hasEnoughWords) feedback.push('Hazla más específica.');
-      if (tooLong) feedback.push('Hazla más corta.');
-      if (hasVaguePattern) feedback.push('Evita frases vagas.');
-      return { actionableOk: score >= 70, actionableFeedback: feedback.join(' ') };
     }
 
     async function submitQuick() {
@@ -152,8 +119,7 @@
 
         const list = document.getElementById('collectList');
         const empty = document.getElementById('collectEmpty');
-        const computed = evaluateActionability(data.item.title || data.item.input || '');
-        const row = buildRow({ ...data.item, ...computed });
+        const row = buildRow(data.item);
         if (list) list.insertBefore(row, list.children[1] || null);
         if (empty) empty.classList.add('hidden');
         attachEditHandlers(row);

@@ -132,7 +132,6 @@ app.get('/collect', async (req, res) => {
   const db = await loadDb();
   const items = (db.items || [])
     .filter(i => i.list === 'collect' && i.status !== 'done')
-    .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
   return renderPage(res, 'collect', {
