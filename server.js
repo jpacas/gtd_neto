@@ -274,9 +274,9 @@ app.get('/agendar', async (req, res) => {
     .filter(i => i.list === 'agendar' && i.status !== 'done')
     .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
     .sort((a, b) => {
-      const ad = String(a.scheduledFor || '0000-01-01');
-      const bd = String(b.scheduledFor || '0000-01-01');
-      return bd.localeCompare(ad); // más reciente -> más antiguo
+      const ad = String(a.scheduledFor || '9999-12-31');
+      const bd = String(b.scheduledFor || '9999-12-31');
+      return ad.localeCompare(bd); // más antiguo -> más reciente
     });
 
   return renderPage(res, 'agendar', {
