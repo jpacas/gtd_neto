@@ -12,13 +12,13 @@ const HOST = process.env.HOST || '127.0.0.1';
 const APP_API_KEY = process.env.APP_API_KEY || '';
 
 // OpenClaw
-const OPENCLAW_AGENT_SESSION = process.env.OPENCLAW_AGENT_SESSION || 'mi-web-app';
+const OPENCLAW_AGENT_SESSION = process.env.OPENCLAW_AGENT_SESSION || 'gtd_neto';
 const OPENCLAW_AGENT_ID = process.env.OPENCLAW_AGENT_ID || '';
 const OPENCLAW_TIMEOUT_SECONDS = Number(process.env.OPENCLAW_TIMEOUT_SECONDS || 180);
 const OPENCLAW_THINKING = process.env.OPENCLAW_THINKING || 'low';
 
 if (!APP_API_KEY) {
-  console.warn('[mi-web-app] WARNING: APP_API_KEY is empty. Set it in .env to protect POST endpoints.');
+  console.warn('[gtd_neto] WARNING: APP_API_KEY is empty. Set it in .env to protect POST endpoints.');
 }
 
 app.set('view engine', 'ejs');
@@ -39,7 +39,7 @@ function requireApiKey(req, res, next) {
 
 function renderPage(res, view, data) {
   const viewsPath = app.get('views');
-  const title = data?.title || 'GTD (OpenClaw)';
+  const title = data?.title || 'GTD_Neto';
   const flash = data?.flash || null;
   const body = ejs.renderFile(`${viewsPath}/${view}.ejs`, data);
 
@@ -226,5 +226,5 @@ app.post('/items/:id/delete', requireApiKey, async (req, res) => {
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
 
 app.listen(PORT, HOST, () => {
-  console.log(`[mi-web-app] listening on http://${HOST}:${PORT}`);
+  console.log(`[gtd_neto] listening on http://${HOST}:${PORT}`);
 });
