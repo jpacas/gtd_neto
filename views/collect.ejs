@@ -7,7 +7,7 @@
     <% if (needApiKey) { %>
       <input name="apiKey" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="API key" />
     <% } %>
-    <button class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Agregar a Collect</button>
+    <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Agregar a Collect</button>
     <p class="text-xs text-slate-500">Tip: Enter para agregar · Shift+Enter para salto de línea.</p>
   </form>
 </div>
@@ -16,7 +16,8 @@
   (function () {
     const form = document.getElementById('collectForm');
     const input = document.getElementById('collectInput');
-    if (!form || !input) return;
+    const addBtn = document.getElementById('collectAddBtn');
+    if (!form || !input || !addBtn) return;
 
     const destinationButtons = `<% for (const d of destinations) { %><button name="destination" value="<%= d.key %>" class="text-xs px-2.5 py-1 rounded-lg bg-white border hover:bg-slate-50"><%= d.label %></button><% } %>`;
 
@@ -34,9 +35,13 @@
       return wrapper;
     }
 
+    let isSubmitting = false;
+
     async function submitQuick() {
       const text = input.value.trim();
-      if (!text) return;
+      if (!text || isSubmitting) return;
+      isSubmitting = true;
+      addBtn.disabled = true;
 
       const formData = new FormData(form);
       const body = new URLSearchParams();
@@ -62,11 +67,13 @@
         input.focus();
       } catch {
         form.submit();
+      } finally {
+        isSubmitting = false;
+        addBtn.disabled = false;
       }
     }
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
+    addBtn.addEventListener('click', () => {
       submitQuick();
     });
 
