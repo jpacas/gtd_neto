@@ -5,6 +5,14 @@
       .line { stroke:#111; stroke-width:3; fill:none; }
       .line-thin { stroke:#111; stroke-width:2; fill:none; }
       .signal { stroke:#111; stroke-width:2; fill:none; stroke-dasharray:8 6; }
+
+      /* Código de colores por presión */
+      .steam-hp { stroke:#d62828; stroke-width:4; fill:none; }   /* Alta presión ~52-65 bar */
+      .steam-mp { stroke:#f77f00; stroke-width:4; fill:none; }   /* Media/intermedia */
+      .steam-lp { stroke:#1d4ed8; stroke-width:4; fill:none; }   /* Baja presión ~1.4 bar */
+      .steam-vac{ stroke:#14b8a6; stroke-width:4; fill:none; }   /* Muy baja/condensación ~0.46 bar */
+      .cooling  { stroke:#0ea5e9; stroke-width:4; fill:none; }   /* Agua enfriamiento */
+
       .equip { stroke:#111; stroke-width:3; fill:#fff; }
       .txt { font-family:Arial, Helvetica, sans-serif; fill:#111; }
       .h1 { font-size:22px; font-weight:700; }
@@ -21,8 +29,16 @@
   <text x="40" y="40" class="txt h1">P&amp;ID Conceptual – Sistema de vapor con 2 turbogeneradores</text>
   <text x="40" y="68" class="txt s">Basado en diagrama de campo. Versión para edición técnica posterior (tags, líneas, instrumentos y datos de diseño).</text>
 
+  <!-- Leyenda de color -->
+  <rect x="40" y="88" width="520" height="120" class="equip"/>
+  <text x="55" y="110" class="txt tag">Leyenda líneas por presión:</text>
+  <line x1="55" y1="130" x2="115" y2="130" class="steam-hp"/><text x="125" y="135" class="txt s">HP vapor (52–65 bar)</text>
+  <line x1="55" y1="155" x2="115" y2="155" class="steam-lp"/><text x="125" y="160" class="txt s">LP vapor (header escape 1.4 bar)</text>
+  <line x1="55" y1="180" x2="115" y2="180" class="steam-vac"/><text x="125" y="185" class="txt s">Descarga a condensador (≈0.46 bar)</text>
+  <line x1="320" y1="130" x2="380" y2="130" class="cooling"/><text x="390" y="135" class="txt s">Agua enfriamiento</text>
+
   <!-- Header de escape -->
-  <line x1="750" y1="300" x2="1520" y2="300" class="line" marker-end="url(#arrow)"/>
+  <line x1="750" y1="300" x2="1520" y2="300" class="steam-lp" marker-end="url(#arrow)"/>
   <text x="980" y="285" class="txt p">Header vapor de escape – 1.4 bar</text>
   <text x="980" y="325" class="txt s">Demanda total a ingenio: 110–120 t/h</text>
 
@@ -38,13 +54,13 @@
   <text x="340" y="266" class="txt p">NG 10 MW</text>
 
   <!-- Ingreso TG NG -->
-  <line x1="100" y1="160" x2="320" y2="160" class="line"/>
-  <line x1="320" y1="160" x2="320" y2="210" class="line" marker-end="url(#arrow)"/>
+  <line x1="100" y1="160" x2="320" y2="160" class="steam-hp"/>
+  <line x1="320" y1="160" x2="320" y2="210" class="steam-hp" marker-end="url(#arrow)"/>
   <text x="100" y="145" class="txt p">Vapor HP: 75 t/h @ 52 bar</text>
 
   <!-- Salida TG NG a header -->
-  <line x1="460" y1="255" x2="750" y2="255" class="line"/>
-  <line x1="750" y1="255" x2="750" y2="300" class="line" marker-end="url(#arrow)"/>
+  <line x1="460" y1="255" x2="750" y2="255" class="steam-lp"/>
+  <line x1="750" y1="255" x2="750" y2="300" class="steam-lp" marker-end="url(#arrow)"/>
   <text x="540" y="242" class="txt p">75 t/h</text>
 
   <!-- Generador TG-101 -->
@@ -65,11 +81,11 @@
   <text x="626" y="605" class="txt s">20 MW</text>
 
   <!-- Ingreso TG-102 con PCV -->
-  <line x1="90" y1="470" x2="210" y2="470" class="line"/>
+  <line x1="90" y1="470" x2="210" y2="470" class="steam-hp"/>
   <polygon points="210,450 235,470 210,490" class="equip"/>
   <polygon points="260,450 235,470 260,490" class="equip"/>
-  <line x1="260" y1="470" x2="300" y2="470" class="line"/>
-  <line x1="300" y1="470" x2="300" y2="535" class="line" marker-end="url(#arrow)"/>
+  <line x1="260" y1="470" x2="300" y2="470" class="steam-hp"/>
+  <line x1="300" y1="470" x2="300" y2="535" class="steam-hp" marker-end="url(#arrow)"/>
   <text x="90" y="455" class="txt p">Vapor HP: 100 t/h @ 65 bar</text>
   <text x="218" y="440" class="txt tag">PCV-201</text>
 
@@ -83,20 +99,20 @@
   de header (1.4 bar)</text>
 
   <!-- Salida de escape TG-102 a header -->
-  <line x1="430" y1="620" x2="750" y2="620" class="line"/>
-  <line x1="750" y1="620" x2="750" y2="300" class="line" marker-end="url(#arrow)"/>
+  <line x1="430" y1="620" x2="750" y2="620" class="steam-lp"/>
+  <line x1="750" y1="620" x2="750" y2="300" class="steam-lp" marker-end="url(#arrow)"/>
   <text x="525" y="610" class="txt p">~35 t/h a header</text>
 
   <!-- Rama a condensador -->
-  <line x1="505" y1="660" x2="505" y2="760" class="line" marker-end="url(#arrow)"/>
-  <text x="520" y="715" class="txt p">~65 t/h a condensador</text>
+  <line x1="505" y1="660" x2="505" y2="760" class="steam-vac" marker-end="url(#arrow)"/>
+  <text x="520" y="715" class="txt p">~65 t/h a condensador (~0.46 bar)</text>
 
   <circle cx="505" cy="820" r="50" class="equip"/>
   <path d="M478 805 C490 790, 500 845, 512 830 C524 815, 534 870, 545 855" class="line-thin"/>
   <text x="450" y="892" class="txt h2">E-301 Condensador</text>
 
   <!-- Agua de enfriamiento -->
-  <line x1="360" y1="860" x2="455" y2="840" class="line" marker-end="url(#arrow)"/>
+  <line x1="360" y1="860" x2="455" y2="840" class="cooling" marker-end="url(#arrow)"/>
   <text x="280" y="872" class="txt p">Agua enfriamiento: 65 m³/h</text>
 
   <!-- Notas -->
