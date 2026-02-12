@@ -372,6 +372,21 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
   return res.redirect('/agendar');
 });
 
+app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
+  if (idx === -1) return res.redirect('/agendar');
+
+  db.items[idx] = updateItem(db.items[idx], {
+    status: 'done',
+    completedAt: new Date().toISOString(),
+    completionComment: null,
+  });
+  await saveDb(db);
+  return res.redirect('/agendar');
+});
+
 app.get('/delegar', async (req, res) => {
   const db = await loadDb();
   const groupBy = String(req.query?.groupBy || 'date') === 'owner' ? 'owner' : 'date';
