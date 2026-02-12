@@ -4,6 +4,9 @@
     <a class="text-sm underline" href="/">+ Capturar</a>
   <% } %>
 </div>
+<% if (sectionGuide) { %>
+  <p class="text-sm text-slate-600 mt-1"><%= sectionGuide %></p>
+<% } %>
 
 <form method="GET" class="mt-4 bg-white border rounded-xl p-3 grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
   <div class="md:col-span-2">

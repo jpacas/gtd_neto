@@ -91,17 +91,13 @@ app.get('/', async (req, res) => {
     reference: items.filter(i => i.list === 'reference' && i.status !== 'done').length,
   };
 
-  const todayCount = items.filter(i => i.status !== 'done' && (i.list === 'next' || i.list === 'calendar')).length;
-
   const cards = [
-    { label: 'Hoy', count: todayCount, href: '/today' },
-    { label: 'Inbox', count: counts.inbox, href: '/inbox' },
-    { label: 'Next', count: counts.next, href: '/next' },
-    { label: 'Projects', count: counts.projects, href: '/projects' },
+    { label: 'Collect', count: counts.inbox, href: '/collect' },
+    { label: 'Schedule', count: counts.calendar, href: '/schedule' },
+    { label: 'Do', count: counts.next, href: '/do' },
     { label: 'Waiting', count: counts.waiting, href: '/waiting' },
     { label: 'Someday', count: counts.someday, href: '/someday' },
-    { label: 'Calendar', count: counts.calendar, href: '/calendar' },
-    { label: 'Reference', count: counts.reference, href: '/reference' },
+    { label: 'Projects', count: counts.projects, href: '/projects' },
   ];
 
   return renderPage(res, 'dashboard', {
@@ -193,14 +189,15 @@ app.post('/inbox/add', requireApiKey, async (req, res) => {
   return res.redirect(destination === 'inbox' ? '/inbox' : `/${destination}`);
 });
 
-app.get('/inbox', async (req, res) => {
+app.get(['/inbox', '/collect'], async (req, res) => {
   const db = await loadDb();
   const base = (db.items || []).filter(i => i.list === 'inbox' && i.status !== 'done').sort(sortByCreatedDesc);
   const { out: items, q, ctx } = applyListFilters(base, req.query);
 
   return renderPage(res, 'list', {
-    title: 'Inbox',
-    heading: 'Inbox',
+    title: 'Collect',
+    heading: 'Collect (Inbox)',
+    sectionGuide: 'Captura todo aquí. No decidas demasiado en este paso; luego procesa y organiza.',
     items,
     lists: listOptions(),
     showCapture: true,
@@ -208,7 +205,7 @@ app.get('/inbox', async (req, res) => {
     apiKey: '',
     q,
     ctx,
-    basePath: '/inbox',
+    basePath: '/collect',
   });
 });
 
@@ -260,14 +257,15 @@ app.post('/inbox/:id/process', requireApiKey, async (req, res) => {
   }
 });
 
-function makeListRoute(listName, heading) {
-  app.get(`/${listName}`, async (req, res) => {
+function makeListRoute(listName, heading, guide, aliases = []) {
+  app.get([`/${listName}`, ...aliases], async (req, res) => {
     const db = await loadDb();
     const base = (db.items || []).filter(i => i.list === listName && i.status !== 'done').sort(sortByCreatedDesc);
     const { out: items, q, ctx } = applyListFilters(base, req.query);
     return renderPage(res, 'list', {
       title: heading,
       heading,
+      sectionGuide: guide,
       items,
       lists: listOptions(),
       showCapture: true,
@@ -275,7 +273,7 @@ function makeListRoute(listName, heading) {
       apiKey: '',
       q,
       ctx,
-      basePath: `/${listName}`,
+      basePath: aliases[0] || `/${listName}`,
     });
   });
 }
@@ -301,12 +299,12 @@ app.get('/today', async (req, res) => {
   });
 });
 
-makeListRoute('next', 'Next Actions');
-makeListRoute('projects', 'Projects');
-makeListRoute('waiting', 'Waiting For');
-makeListRoute('someday', 'Someday / Maybe');
-makeListRoute('calendar', 'Calendar');
-makeListRoute('reference', 'Reference');
+makeListRoute('next', 'Do (Next Actions)', 'Solo acciones concretas y físicas. Filtra por contexto para elegir qué hacer ahora.', ['/do']);
+makeListRoute('projects', 'Projects', 'Resultados que requieren más de una acción. Cada proyecto debería tener una próxima acción.');
+makeListRoute('waiting', 'Waiting For', 'Seguimientos de terceros. Revisa esta lista para hacer ping y destrabar pendientes.');
+makeListRoute('someday', 'Someday / Maybe', 'Ideas sin compromiso actual. Revísalas semanalmente para activar o descartar.');
+makeListRoute('calendar', 'Schedule (Calendar)', 'Aquí solo van compromisos con fecha/hora real (hard landscape).', ['/schedule']);
+makeListRoute('reference', 'Reference', 'Material de consulta, no acciones.');
 
 app.post('/items/:id/move', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
