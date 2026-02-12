@@ -2,14 +2,31 @@
 <p class="text-sm text-slate-600 mt-1">Captura todo en texto y luego decide destino.</p>
 
 <div class="mt-4 bg-white border rounded-xl p-5">
-  <form method="POST" action="/collect/add" class="space-y-3">
-    <textarea name="input" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe una actividad, idea o proyecto..."></textarea>
+  <form method="POST" action="/collect/add" class="space-y-3" id="collectForm">
+    <textarea id="collectInput" name="input" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe una actividad, idea o proyecto..."></textarea>
     <% if (needApiKey) { %>
       <input name="apiKey" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="API key" />
     <% } %>
     <button class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Agregar a Collect</button>
+    <p class="text-xs text-slate-500">Tip: Enter para agregar · Shift+Enter para salto de línea.</p>
   </form>
 </div>
+
+<script>
+  (function () {
+    const form = document.getElementById('collectForm');
+    const input = document.getElementById('collectInput');
+    if (!form || !input) return;
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!input.value.trim()) return;
+        form.submit();
+      }
+    });
+  })();
+</script>
 
 <div class="mt-6 space-y-3">
   <% if (!items.length) { %>
