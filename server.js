@@ -17,6 +17,7 @@ if (!APP_API_KEY) {
 app.set('view engine', 'ejs');
 app.set('views', new URL('./views', import.meta.url).pathname);
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
+app.use('/docs', express.static(new URL('./docs', import.meta.url).pathname));
 
 function extractApiKey(req) {
   return req.get('x-api-key') || req.body?.apiKey || req.query?.apiKey || '';

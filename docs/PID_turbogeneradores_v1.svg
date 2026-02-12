@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1800" height="980" viewBox="0 0 1800 980" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .line { stroke:#111; stroke-width:3; fill:none; }
+      .line-thin { stroke:#111; stroke-width:2; fill:none; }
+      .signal { stroke:#111; stroke-width:2; fill:none; stroke-dasharray:8 6; }
+      .equip { stroke:#111; stroke-width:3; fill:#fff; }
+      .txt { font-family:Arial, Helvetica, sans-serif; fill:#111; }
+      .h1 { font-size:22px; font-weight:700; }
+      .h2 { font-size:18px; font-weight:700; }
+      .p  { font-size:16px; }
+      .s  { font-size:14px; }
+      .tag{ font-size:14px; font-weight:700; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 z" fill="#111"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="40" class="txt h1">P&amp;ID Conceptual – Sistema de vapor con 2 turbogeneradores</text>
+  <text x="40" y="68" class="txt s">Basado en diagrama de campo. Versión para edición técnica posterior (tags, líneas, instrumentos y datos de diseño).</text>
+
+  <!-- Header de escape -->
+  <line x1="750" y1="300" x2="1520" y2="300" class="line" marker-end="url(#arrow)"/>
+  <text x="980" y="285" class="txt p">Header vapor de escape – 1.4 bar</text>
+  <text x="980" y="325" class="txt s">Demanda total a ingenio: 110–120 t/h</text>
+
+  <!-- Caja Ingenio -->
+  <rect x="1520" y="240" width="240" height="120" class="equip"/>
+  <text x="1540" y="280" class="txt h2">INGENIO</text>
+  <text x="1540" y="308" class="txt p">Consumo: 110–120 t/h</text>
+  <text x="1540" y="334" class="txt p">Presión: 1.4 bar</text>
+
+  <!-- TG NG superior -->
+  <polygon points="320,170 460,190 460,300 320,320" class="equip"/>
+  <text x="348" y="240" class="txt h2">TG-101</text>
+  <text x="340" y="266" class="txt p">NG 10 MW</text>
+
+  <!-- Ingreso TG NG -->
+  <line x1="100" y1="160" x2="320" y2="160" class="line"/>
+  <line x1="320" y1="160" x2="320" y2="210" class="line" marker-end="url(#arrow)"/>
+  <text x="100" y="145" class="txt p">Vapor HP: 75 t/h @ 52 bar</text>
+
+  <!-- Salida TG NG a header -->
+  <line x1="460" y1="255" x2="750" y2="255" class="line"/>
+  <line x1="750" y1="255" x2="750" y2="300" class="line" marker-end="url(#arrow)"/>
+  <text x="540" y="242" class="txt p">75 t/h</text>
+
+  <!-- Generador TG-101 -->
+  <circle cx="550" cy="245" r="42" class="equip"/>
+  <text x="528" y="250" class="txt p">G-101</text>
+
+  <!-- TG TGM inferior -->
+  <polygon points="280,500 430,520 430,640 280,660" class="equip"/>
+  <text x="298" y="575" class="txt h2">TG-102A</text>
+  <text x="292" y="602" class="txt s">Etapa Escape</text>
+
+  <polygon points="430,500 580,520 580,640 430,660" class="equip"/>
+  <text x="450" y="575" class="txt h2">TG-102B</text>
+  <text x="452" y="602" class="txt s">Etapa Cond.</text>
+
+  <circle cx="650" cy="580" r="42" class="equip"/>
+  <text x="628" y="585" class="txt p">G-102</text>
+  <text x="626" y="605" class="txt s">20 MW</text>
+
+  <!-- Ingreso TG-102 con PCV -->
+  <line x1="90" y1="470" x2="210" y2="470" class="line"/>
+  <polygon points="210,450 235,470 210,490" class="equip"/>
+  <polygon points="260,450 235,470 260,490" class="equip"/>
+  <line x1="260" y1="470" x2="300" y2="470" class="line"/>
+  <line x1="300" y1="470" x2="300" y2="535" class="line" marker-end="url(#arrow)"/>
+  <text x="90" y="455" class="txt p">Vapor HP: 100 t/h @ 65 bar</text>
+  <text x="218" y="440" class="txt tag">PCV-201</text>
+
+  <!-- Señal de presión header a PCV -->
+  <circle cx="960" cy="350" r="22" class="equip"/>
+  <text x="947" y="355" class="txt s">PIC</text>
+  <line x1="960" y1="328" x2="960" y2="300" class="line-thin"/>
+  <line x1="960" y1="372" x2="235" y2="372" class="signal"/>
+  <line x1="235" y1="372" x2="235" y2="450" class="signal" marker-end="url(#arrow)"/>
+  <text x="980" y="356" class="txt s">PIC-201 controla presión
+  de header (1.4 bar)</text>
+
+  <!-- Salida de escape TG-102 a header -->
+  <line x1="430" y1="620" x2="750" y2="620" class="line"/>
+  <line x1="750" y1="620" x2="750" y2="300" class="line" marker-end="url(#arrow)"/>
+  <text x="525" y="610" class="txt p">~35 t/h a header</text>
+
+  <!-- Rama a condensador -->
+  <line x1="505" y1="660" x2="505" y2="760" class="line" marker-end="url(#arrow)"/>
+  <text x="520" y="715" class="txt p">~65 t/h a condensador</text>
+
+  <circle cx="505" cy="820" r="50" class="equip"/>
+  <path d="M478 805 C490 790, 500 845, 512 830 C524 815, 534 870, 545 855" class="line-thin"/>
+  <text x="450" y="892" class="txt h2">E-301 Condensador</text>
+
+  <!-- Agua de enfriamiento -->
+  <line x1="360" y1="860" x2="455" y2="840" class="line" marker-end="url(#arrow)"/>
+  <text x="280" y="872" class="txt p">Agua enfriamiento: 65 m³/h</text>
+
+  <!-- Notas -->
+  <rect x="1080" y="520" width="650" height="360" class="equip"/>
+  <text x="1100" y="555" class="txt h2">Notas de ingeniería (pendiente completar)</text>
+  <text x="1100" y="585" class="txt p">1) Confirmar balance exacto de masa en todos los modos operativos.</text>
+  <text x="1100" y="615" class="txt p">2) Definir tags de líneas (N° línea, spec, diámetro, aislamiento).</text>
+  <text x="1100" y="645" class="txt p">3) Agregar válvulas de aislamiento, checks, bypass y PSV según norma local.</text>
+  <text x="1100" y="675" class="txt p">4) Completar lazos de control (PIC/FIC/TIC), rangos, fail position y alarmas.</text>
+  <text x="1100" y="705" class="txt p">5) Definir límites de batería (B.L.) e interconexión con ingenio.</text>
+  <text x="1100" y="735" class="txt p">6) Revisar simbología final según ISA-5.1 / estándar interno del ingenio.</text>
+
+  <text x="40" y="950" class="txt s">Documento no emitido para construcción. Uso: base de digitalización y discusión técnica.</text>
+</svg>
