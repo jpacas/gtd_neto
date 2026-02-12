@@ -47,7 +47,15 @@
               <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
             </form>
 
-            <div class="delegar-view-row flex-1 min-w-0" data-id="<%= it.id %>" data-title="<%= it.title || it.input %>" data-owner="<%= it.delegatedTo || '' %>">
+            <form method="POST" action="/delegar/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 delegar-edit-form" data-id="<%= it.id %>">
+              <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+              <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1.5 text-sm" />
+              <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-44 border rounded-md px-2 py-1.5 text-sm" required />
+              <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="border rounded-md px-2 py-1.5 text-sm" required />
+              <button class="text-xs px-2 py-1.5 rounded border bg-white hover:bg-slate-50">Guardar</button>
+            </form>
+
+            <div class="delegar-view-row flex-1 min-w-0" data-id="<%= it.id %>">
               <span class="text-sm"><%= it.title || it.input %></span>
               <span class="text-xs text-slate-500 ml-2">→ <%= it.delegatedTo || 'Sin responsable' %></span>
             </div>
@@ -69,29 +77,14 @@
     document.querySelectorAll('.edit-toggle').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
-        const row = document.querySelector(`.delegar-view-row[data-id="${id}"]`);
-        const quickForm = document.querySelector(`.delegar-quick-form[data-id="${id}"]`);
-        if (!row || !quickForm) return;
-
-        const currentTitle = row.dataset.title || '';
-        const currentOwner = row.dataset.owner || '';
-
-        const nextOwner = window.prompt('Responsable', currentOwner);
-        if (nextOwner == null) return;
-        const owner = String(nextOwner).trim();
-        if (!owner) return;
-
-        const nextTitle = window.prompt('Actividad', currentTitle);
-        if (nextTitle == null) return;
-        const title = String(nextTitle).trim();
-        if (!title) return;
-
-        const ownerInput = quickForm.querySelector('input[name="delegatedTo"]');
-        const titleInput = quickForm.querySelector('input[name="title"]');
-        if (!ownerInput || !titleInput) return;
-        ownerInput.value = owner;
-        titleInput.value = title;
-        quickForm.submit();
+        const edit = document.querySelector(`.delegar-edit-form[data-id="${id}"]`);
+        const view = document.querySelector(`.delegar-view-row[data-id="${id}"]`);
+        if (!edit || !view) return;
+        edit.classList.remove('hidden');
+        edit.classList.add('flex');
+        view.classList.add('hidden');
+        const input = edit.querySelector('input[name="title"]');
+        if (input) input.focus();
       });
     });
   })();
