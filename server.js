@@ -269,7 +269,44 @@ app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
   return res.redirect('/hacer');
 });
 
-for (const d of DESTINATIONS.filter(x => x.key !== 'hacer')) {
+app.get('/agendar', async (req, res) => {
+  const db = await loadDb();
+  const items = (db.items || [])
+    .filter(i => i.list === 'agendar' && i.status !== 'done')
+    .sort((a, b) => {
+      const ad = String(a.scheduledFor || '9999-12-31');
+      const bd = String(b.scheduledFor || '9999-12-31');
+      return ad.localeCompare(bd);
+    });
+
+  return renderPage(res, 'agendar', {
+    title: 'Agendar',
+    items,
+    needApiKey: Boolean(APP_API_KEY),
+    apiKey: '',
+  });
+});
+
+app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const scheduledFor = String(req.body?.scheduledFor || '').trim();
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
+  if (idx === -1) return res.redirect('/agendar');
+
+  const current = db.items[idx];
+  const title = String(req.body?.title || current.title || current.input || '').trim();
+  db.items[idx] = updateItem(current, {
+    title,
+    scheduledFor: scheduledFor || null,
+  });
+
+  await saveDb(db);
+  return res.redirect('/agendar');
+});
+
+for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar')) {
   app.get(`/${d.key}`, async (req, res) => {
     const db = await loadDb();
     const items = (db.items || [])

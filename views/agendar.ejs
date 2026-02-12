@@ -1,0 +1,32 @@
+<h2 class="text-lg font-semibold">Agendar</h2>
+<p class="text-sm text-slate-600 mt-1">Cada actividad aquí debe tener fecha.</p>
+
+<div class="mt-4 rounded-xl border bg-white overflow-hidden">
+  <% if (!items.length) { %>
+    <div class="p-5 text-sm text-slate-600">No hay actividades en Agendar.</div>
+  <% } %>
+
+  <% for (const it of items) { %>
+    <div class="px-3 py-2 border-b last:border-b-0 <%= it.scheduledFor ? '' : 'bg-amber-50' %>">
+      <form method="POST" action="/agendar/<%= it.id %>/update" class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+
+        <div class="md:col-span-8">
+          <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2.5 py-2 text-sm" />
+        </div>
+
+        <div class="md:col-span-3">
+          <input type="date" name="scheduledFor" value="<%= it.scheduledFor || '' %>" class="w-full border rounded-md px-2.5 py-2 text-sm" required />
+        </div>
+
+        <div class="md:col-span-1 md:text-right">
+          <button class="w-full md:w-auto text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Guardar</button>
+        </div>
+      </form>
+
+      <% if (!it.scheduledFor) { %>
+        <div class="text-[11px] text-amber-800 mt-1">Falta fecha. Asigna una para mantener orden en Agendar.</div>
+      <% } %>
+    </div>
+  <% } %>
+</div>
