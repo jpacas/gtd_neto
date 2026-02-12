@@ -18,27 +18,82 @@
     const input = document.getElementById('collectInput');
     if (!form || !input) return;
 
+    const destinationOptions = `<% for (const d of destinations) { %><option value="<%= d.key %>"><%= d.label %></option><% } %>`;
+
+    function buildRow(item) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'bg-white border rounded-lg p-3';
+      wrapper.innerHTML = `
+        <div class="text-sm font-medium"></div>
+        <form method="POST" action="/collect/${item.id}/send" class="mt-2 flex flex-wrap gap-2 items-center">
+          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+          <select name="destination" class="text-sm border rounded-lg px-2 py-1">${destinationOptions}</select>
+          <button class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Enviar destino</button>
+        </form>
+      `;
+      wrapper.querySelector('.font-medium').textContent = item.title || item.input || '';
+      return wrapper;
+    }
+
+    async function submitQuick() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      const formData = new FormData(form);
+      const body = new URLSearchParams();
+      for (const [k, v] of formData.entries()) body.append(k, v);
+
+      try {
+        const r = await fetch('/collect/add', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        if (!r.ok) throw new Error('request_failed');
+        const data = await r.json();
+        if (!data?.ok || !data?.item) throw new Error('bad_payload');
+
+        const list = document.getElementById('collectList');
+        const empty = document.getElementById('collectEmpty');
+        const row = buildRow(data.item);
+        if (list) list.insertBefore(row, list.children[1] || null);
+        if (empty) empty.classList.add('hidden');
+
+        input.value = '';
+        input.focus();
+      } catch {
+        form.submit();
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitQuick();
+    });
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (!input.value.trim()) return;
-        form.submit();
+        submitQuick();
       }
     });
+
+    input.focus();
   })();
 </script>
 
-<div class="mt-6 space-y-3">
+<div id="collectList" class="mt-4 space-y-2">
   <% if (!items.length) { %>
-    <div class="text-sm text-slate-600">Collect está vacío.</div>
+    <div id="collectEmpty" class="text-sm text-slate-600">Collect está vacío.</div>
+  <% } else { %>
+    <div id="collectEmpty" class="text-sm text-slate-600 hidden">Collect está vacío.</div>
   <% } %>
 
   <% for (const it of items) { %>
-    <div class="bg-white border rounded-xl p-4">
-      <div class="font-medium"><%= it.title || it.input %></div>
-      <div class="text-sm text-slate-600 mt-1 whitespace-pre-wrap"><%= it.input %></div>
+    <div class="bg-white border rounded-lg p-3">
+      <div class="text-sm font-medium"><%= it.title || it.input %></div>
 
-      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-3 flex flex-wrap gap-2 items-center">
+      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-2 flex flex-wrap gap-2 items-center">
         <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
         <select name="destination" class="text-sm border rounded-lg px-2 py-1">
           <% for (const d of destinations) { %>

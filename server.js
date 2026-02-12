@@ -94,7 +94,12 @@ app.get('/collect', async (req, res) => {
 
 app.post('/collect/add', requireApiKey, async (req, res) => {
   const input = String(req.body?.input || '').trim();
-  if (!input) return res.redirect('/collect');
+  if (!input) {
+    if (String(req.get('accept') || '').includes('application/json')) {
+      return res.status(400).json({ ok: false, error: 'empty_input' });
+    }
+    return res.redirect('/collect');
+  }
 
   const db = await loadDb();
   const item = updateItem(newItem({ input }), {
@@ -105,6 +110,10 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
   });
   db.items = [item, ...(db.items || [])];
   await saveDb(db);
+
+  if (String(req.get('accept') || '').includes('application/json')) {
+    return res.json({ ok: true, item });
+  }
 
   return res.redirect('/collect');
 });
