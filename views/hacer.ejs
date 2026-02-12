@@ -1,7 +1,7 @@
 <div class="flex items-center justify-between gap-3">
   <div>
     <h2 class="text-lg font-semibold">Hacer</h2>
-    <p class="text-sm text-slate-600 mt-1">Vista compacta de acciones &lt;10 min, ordenadas por prioridad.</p>
+    <p class="text-sm text-slate-600 mt-1">Vista compacta de acciones &lt;10 min, ordenadas por urgencia y luego importancia.</p>
   </div>
   <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Ir a Collect</a>
 </div>
@@ -19,7 +19,6 @@
           <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1.5 text-sm" />
           <input type="number" min="1" max="5" name="urgency" value="<%= it.urgency || 3 %>" class="w-14 border rounded-md px-2 py-1.5 text-sm text-center" title="Urgencia" />
           <input type="number" min="1" max="5" name="importance" value="<%= it.importance || 3 %>" class="w-14 border rounded-md px-2 py-1.5 text-sm text-center" title="Importancia" />
-          <input type="number" min="1" max="10" name="estimateMin" value="<%= it.estimateMin || 10 %>" class="w-14 border rounded-md px-2 py-1.5 text-sm text-center" title="Minutos" />
           <button class="text-xs px-2 py-1.5 rounded border bg-white hover:bg-slate-50">Guardar</button>
         </form>
 
@@ -27,8 +26,6 @@
           <span class="text-sm truncate"><%= it.title || it.input %></span>
           <span class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 shrink-0">U <%= it.urgency || 3 %></span>
           <span class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 shrink-0">I <%= it.importance || 3 %></span>
-          <span class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 shrink-0"><%= it.estimateMin || 10 %>m</span>
-          <span class="text-[11px] px-1.5 py-0.5 rounded border bg-slate-50 text-slate-700 shrink-0">P <%= it.priorityScore || '-' %></span>
         </div>
 
         <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">✏️</button>

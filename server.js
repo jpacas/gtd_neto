@@ -231,7 +231,11 @@ app.get('/hacer', async (req, res) => {
   const items = (db.items || [])
     .filter(i => i.list === 'hacer' && i.status !== 'done')
     .map(i => ({ ...i, ...withHacerMeta(i) }))
-    .sort((a, b) => Number(b.priorityScore || 0) - Number(a.priorityScore || 0));
+    .sort((a, b) => {
+      const byUrgency = Number(b.urgency || 0) - Number(a.urgency || 0);
+      if (byUrgency !== 0) return byUrgency;
+      return Number(b.importance || 0) - Number(a.importance || 0);
+    });
 
   return renderPage(res, 'hacer', {
     title: 'Hacer',
