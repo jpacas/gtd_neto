@@ -18,7 +18,7 @@
     const input = document.getElementById('collectInput');
     if (!form || !input) return;
 
-    const destinationOptions = `<% for (const d of destinations) { %><option value="<%= d.key %>"><%= d.label %></option><% } %>`;
+    const destinationButtons = `<% for (const d of destinations) { %><button name="destination" value="<%= d.key %>" class="text-xs px-2.5 py-1 rounded-lg bg-white border hover:bg-slate-50"><%= d.label %></button><% } %>`;
 
     function buildRow(item) {
       const wrapper = document.createElement('div');
@@ -27,8 +27,7 @@
         <div class="text-sm font-medium"></div>
         <form method="POST" action="/collect/${item.id}/send" class="mt-2 flex flex-wrap gap-2 items-center">
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-          <select name="destination" class="text-sm border rounded-lg px-2 py-1">${destinationOptions}</select>
-          <button class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Enviar destino</button>
+          ${destinationButtons}
         </form>
       `;
       wrapper.querySelector('.font-medium').textContent = item.title || item.input || '';
@@ -95,12 +94,9 @@
 
       <form method="POST" action="/collect/<%= it.id %>/send" class="mt-2 flex flex-wrap gap-2 items-center">
         <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-        <select name="destination" class="text-sm border rounded-lg px-2 py-1">
-          <% for (const d of destinations) { %>
-            <option value="<%= d.key %>"><%= d.label %></option>
-          <% } %>
-        </select>
-        <button class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Enviar destino</button>
+        <% for (const d of destinations) { %>
+          <button name="destination" value="<%= d.key %>" class="text-xs px-2.5 py-1 rounded-lg bg-white border hover:bg-slate-50"><%= d.label %></button>
+        <% } %>
       </form>
     </div>
   <% } %>
