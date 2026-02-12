@@ -270,21 +270,13 @@ app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
 
 app.get('/agendar', async (req, res) => {
   const db = await loadDb();
-  const today = new Date();
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-
   const items = (db.items || [])
     .filter(i => i.list === 'agendar' && i.status !== 'done')
     .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
     .sort((a, b) => {
-      const ta = a.scheduledFor ? new Date(`${a.scheduledFor}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
-      const tb = b.scheduledFor ? new Date(`${b.scheduledFor}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
-
-      const da = Math.abs(ta - startOfToday);
-      const db = Math.abs(tb - startOfToday);
-      if (da !== db) return da - db; // más cercana a hoy primero
-
-      return ta - tb;
+      const ad = String(a.scheduledFor || '9999-12-31');
+      const bd = String(b.scheduledFor || '9999-12-31');
+      return ad.localeCompare(bd); // fecha más próxima primero
     });
 
   return renderPage(res, 'agendar', {
