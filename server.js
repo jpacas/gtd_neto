@@ -325,7 +325,7 @@ app.get('/delegar', async (req, res) => {
   const items = baseItems.sort((a, b) => {
     const ad = String(a.delegatedFor || '9999-12-31');
     const bd = String(b.delegatedFor || '9999-12-31');
-    return ad.localeCompare(bd);
+    return ad.localeCompare(bd); // más próxima primero, sin fecha al final
   });
 
   const groupsMap = new Map();

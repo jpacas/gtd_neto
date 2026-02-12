@@ -1,7 +1,7 @@
 <div class="flex items-center justify-between gap-3">
   <div>
     <h2 class="text-lg font-semibold">Delegar</h2>
-    <p class="text-sm text-slate-600 mt-1">Cada actividad delegada debe tener fecha y responsable.</p>
+    <p class="text-sm text-slate-600 mt-1">Fecha y responsable requeridos. Ordenado por fecha más próxima primero.</p>
   </div>
   <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Ir a Collect</a>
 </div>
@@ -36,26 +36,63 @@
   <% for (const g of groups) { %>
     <div class="bg-white border rounded-xl overflow-hidden">
       <div class="px-3 py-2 text-xs text-slate-600 bg-slate-50 border-b"><%= g.label %></div>
-      <% for (const it of g.rows) { %>
-        <div class="px-3 py-2 border-b last:border-b-0">
-          <form method="POST" action="/delegar/<%= it.id %>/update" class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
 
-            <div class="md:col-span-5">
-              <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2.5 py-2 text-sm" />
+      <% for (const it of g.rows) { %>
+        <div class="px-3 py-2 border-b last:border-b-0 <%= (!it.delegatedFor || !it.delegatedTo) ? 'bg-amber-50' : '' %>">
+          <div class="flex items-center gap-2">
+            <form method="POST" action="/delegar/<%= it.id %>/update" class="delegar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
+              <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+              <input type="hidden" name="title" value="<%= it.title || it.input %>" />
+              <input type="hidden" name="delegatedTo" value="<%= it.delegatedTo || '' %>" />
+              <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
+            </form>
+
+            <div class="delegar-view-row flex-1 min-w-0" data-id="<%= it.id %>" data-title="<%= it.title || it.input %>" data-owner="<%= it.delegatedTo || '' %>">
+              <span class="text-sm"><%= it.title || it.input %></span>
+              <span class="text-xs text-slate-500 ml-2">→ <%= it.delegatedTo || 'Sin responsable' %></span>
             </div>
-            <div class="md:col-span-3">
-              <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-full border rounded-md px-2.5 py-2 text-sm" required />
-            </div>
-            <div class="md:col-span-3">
-              <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="w-full border rounded-md px-2.5 py-2 text-sm" required />
-            </div>
-            <div class="md:col-span-1 md:text-right">
-              <button class="w-full md:w-auto text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Guardar</button>
-            </div>
-          </form>
+
+            <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar responsable/actividad">✏️</button>
+          </div>
+
+          <% if (!it.delegatedFor || !it.delegatedTo) { %>
+            <div class="text-[11px] text-amber-800 mt-1">Completa fecha y responsable.</div>
+          <% } %>
         </div>
       <% } %>
     </div>
   <% } %>
 </div>
+
+<script>
+  (function () {
+    document.querySelectorAll('.edit-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const row = document.querySelector(`.delegar-view-row[data-id="${id}"]`);
+        const quickForm = document.querySelector(`.delegar-quick-form[data-id="${id}"]`);
+        if (!row || !quickForm) return;
+
+        const currentTitle = row.dataset.title || '';
+        const currentOwner = row.dataset.owner || '';
+
+        const nextOwner = window.prompt('Responsable', currentOwner);
+        if (nextOwner == null) return;
+        const owner = String(nextOwner).trim();
+        if (!owner) return;
+
+        const nextTitle = window.prompt('Actividad', currentTitle);
+        if (nextTitle == null) return;
+        const title = String(nextTitle).trim();
+        if (!title) return;
+
+        const ownerInput = quickForm.querySelector('input[name="delegatedTo"]');
+        const titleInput = quickForm.querySelector('input[name="title"]');
+        if (!ownerInput || !titleInput) return;
+        ownerInput.value = owner;
+        titleInput.value = title;
+        quickForm.submit();
+      });
+    });
+  })();
+</script>
