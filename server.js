@@ -19,6 +19,10 @@ app.set('views', new URL('./views', import.meta.url).pathname);
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 app.use('/docs', express.static(new URL('./docs', import.meta.url).pathname));
 
+// Evita ruido de 404 en Vercel cuando el navegador pide favicon por defecto
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/favicon.png', (req, res) => res.status(204).end());
+
 function extractApiKey(req) {
   return req.get('x-api-key') || req.body?.apiKey || req.query?.apiKey || '';
 }
