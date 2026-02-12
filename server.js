@@ -102,6 +102,23 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
   }
 
   const db = await loadDb();
+
+  // Guard anti-duplicados: evita doble inserción si llega el mismo texto casi al mismo tiempo
+  const now = Date.now();
+  const recentDuplicate = (db.items || []).find(i =>
+    i.list === 'collect' &&
+    i.status !== 'done' &&
+    String(i.input || '').trim().toLowerCase() === input.toLowerCase() &&
+    Math.abs(now - new Date(i.createdAt || 0).getTime()) < 3000
+  );
+
+  if (recentDuplicate) {
+    if (String(req.get('accept') || '').includes('application/json')) {
+      return res.json({ ok: true, item: recentDuplicate, deduped: true });
+    }
+    return res.redirect('/collect');
+  }
+
   const item = updateItem(newItem({ input }), {
     title: input,
     kind: 'action',
@@ -112,7 +129,7 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
   await saveDb(db);
 
   if (String(req.get('accept') || '').includes('application/json')) {
-    return res.json({ ok: true, item });
+    return res.json({ ok: true, item, deduped: false });
   }
 
   return res.redirect('/collect');
