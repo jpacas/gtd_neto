@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import ejs from 'ejs';
+import cookieParser from 'cookie-parser';
+import { createClient } from '@supabase/supabase-js';
 
 import { loadDb, saveDb, newItem, updateItem } from './lib/store.js';
 
@@ -9,14 +11,26 @@ const app = express();
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || '127.0.0.1';
 const APP_API_KEY = process.env.APP_API_KEY || '';
+const USE_SUPABASE = String(process.env.USE_SUPABASE || '').toLowerCase() === 'true';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
 if (!APP_API_KEY) {
   console.warn('[gtd_neto] WARNING: APP_API_KEY is empty. Set it in .env to protect POST endpoints.');
 }
 
+if (USE_SUPABASE && (!SUPABASE_URL || !SUPABASE_ANON_KEY)) {
+  console.warn('[gtd_neto] WARNING: USE_SUPABASE=true but SUPABASE_URL/SUPABASE_ANON_KEY are missing. Login will fail.');
+}
+
+const supabaseAuth = (SUPABASE_URL && SUPABASE_ANON_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+  : null;
+
 app.set('view engine', 'ejs');
 app.set('views', new URL('./views', import.meta.url).pathname);
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
+app.use(cookieParser());
 app.use('/docs', express.static(new URL('./docs', import.meta.url).pathname));
 
 // Evita ruido de 404 en Vercel cuando el navegador pide favicon por defecto
@@ -34,6 +48,41 @@ function requireApiKey(req, res, next) {
   return res.status(401).send('Unauthorized');
 }
 
+function ownerForReq(req) {
+  return req.auth?.user?.id || process.env.SUPABASE_OWNER || 'default';
+}
+
+async function loadReqDb(req) {
+  return loadDb({ owner: ownerForReq(req) });
+}
+
+async function saveReqDb(req, db) {
+  return saveDb(db, { owner: ownerForReq(req) });
+}
+
+async function attachAuth(req, res, next) {
+  if (!USE_SUPABASE || !supabaseAuth) {
+    req.auth = { user: { id: process.env.SUPABASE_OWNER || 'default', email: 'local@offline' } };
+    return next();
+  }
+
+  const accessToken = req.cookies?.sb_access_token;
+  if (!accessToken) {
+    req.auth = { user: null };
+    return next();
+  }
+
+  const { data } = await supabaseAuth.auth.getUser(accessToken);
+  req.auth = { user: data?.user || null };
+  return next();
+}
+
+function requireAuth(req, res, next) {
+  if (!USE_SUPABASE) return next();
+  if (req.auth?.user) return next();
+  return res.redirect('/login');
+}
+
 function renderPage(res, view, data) {
   const viewsPath = app.get('views');
   const title = data?.title || 'GTD_Neto';
@@ -44,9 +93,57 @@ function renderPage(res, view, data) {
       title,
       flash,
       body: html,
+      useSupabase: USE_SUPABASE,
+      authUser: data?.authUser || res.locals?.authUser || null,
     })
   );
 }
+
+app.use(attachAuth);
+app.use((req, res, next) => {
+  res.locals.authUser = req.auth?.user || null;
+  next();
+});
+
+app.get('/login', async (req, res) => {
+  if (!USE_SUPABASE) return res.redirect('/');
+  if (req.auth?.user) return res.redirect('/');
+  return renderPage(res, 'login', { title: 'Login', needApiKey: false, apiKey: '' });
+});
+
+app.post('/auth/login', async (req, res) => {
+  if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
+
+  const email = String(req.body?.email || '').trim();
+  const password = String(req.body?.password || '');
+
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
+  if (error || !data?.session) {
+    return renderPage(res, 'login', {
+      title: 'Login',
+      flash: { error: 'Credenciales inválidas.' },
+      needApiKey: false,
+      apiKey: '',
+    });
+  }
+
+  const isSecure = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+  res.cookie('sb_access_token', data.session.access_token, { httpOnly: true, sameSite: 'lax', secure: isSecure, path: '/' });
+  res.cookie('sb_refresh_token', data.session.refresh_token, { httpOnly: true, sameSite: 'lax', secure: isSecure, path: '/' });
+  return res.redirect('/');
+});
+
+app.post('/auth/logout', (req, res) => {
+  res.clearCookie('sb_access_token', { path: '/' });
+  res.clearCookie('sb_refresh_token', { path: '/' });
+  return res.redirect('/login');
+});
+
+app.use((req, res, next) => {
+  const publicPaths = ['/login', '/auth/login', '/auth/logout', '/healthz', '/favicon.ico', '/favicon.png'];
+  if (publicPaths.includes(req.path) || req.path.startsWith('/docs/')) return next();
+  return requireAuth(req, res, next);
+});
 
 const DESTINATIONS = [
   { key: 'hacer', label: 'Hacer', hint: 'Acciones <10 min, claras y priorizadas' },
@@ -130,7 +227,7 @@ function withDesglosarMeta(item, patch = {}) {
 }
 
 app.get('/', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const items = db.items || [];
 
   const collectCount = items.filter(i => i.list === 'collect' && i.status !== 'done').length;
@@ -154,7 +251,7 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/collect', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const items = (db.items || [])
     .filter(i => i.list === 'collect' && i.status !== 'done')
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -177,7 +274,7 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
     return res.redirect('/collect');
   }
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
 
   // Guard anti-duplicados: evita doble inserción si llega el mismo texto casi al mismo tiempo
   const now = Date.now();
@@ -202,7 +299,7 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
     status: 'unprocessed',
   });
   db.items = [item, ...(db.items || [])];
-  await saveDb(db);
+  await saveReqDb(req, db);
 
   if (String(req.get('accept') || '').includes('application/json')) {
     return res.json({ ok: true, item, deduped: false });
@@ -216,7 +313,7 @@ app.post('/collect/:id/update', requireApiKey, async (req, res) => {
   const input = String(req.body?.input || '').trim();
   if (!input) return res.redirect('/collect');
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'collect');
   if (idx === -1) return res.redirect('/collect');
 
@@ -224,7 +321,7 @@ app.post('/collect/:id/update', requireApiKey, async (req, res) => {
     input,
     title: input,
   });
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/collect');
 });
 
@@ -233,7 +330,7 @@ app.post('/collect/:id/send', requireApiKey, async (req, res) => {
   const destination = String(req.body?.destination || '');
   if (!destinationByKey(destination)) return res.status(400).send('Bad destination');
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id);
   if (idx === -1) return res.redirect('/collect');
 
@@ -247,12 +344,12 @@ app.post('/collect/:id/send', requireApiKey, async (req, res) => {
   if (destination === 'desglosar') patch = withDesglosarMeta(db.items[idx], basePatch);
 
   db.items[idx] = updateItem(db.items[idx], patch);
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/collect');
 });
 
 app.get('/hacer', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const items = (db.items || [])
     .filter(i => i.list === 'hacer' && i.status !== 'done')
     .map(i => ({ ...i, ...withHacerMeta(i) }))
@@ -277,7 +374,7 @@ app.post('/hacer/add', requireApiKey, async (req, res) => {
 
 app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
   if (idx === -1) return res.redirect('/hacer');
 
@@ -290,7 +387,7 @@ app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
   };
 
   db.items[idx] = updateItem(current, withHacerMeta(current, patch));
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/hacer');
 });
 
@@ -298,7 +395,7 @@ app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
   const comment = String(req.body?.comment || '').trim();
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
   if (idx === -1) return res.redirect('/hacer');
 
@@ -307,12 +404,12 @@ app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
     completedAt: new Date().toISOString(),
     completionComment: comment || null,
   });
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/hacer');
 });
 
 app.get('/terminado', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const items = (db.items || [])
     .filter(i => i.status === 'done')
     .sort((a, b) => String(b.completedAt || b.updatedAt || '').localeCompare(String(a.completedAt || a.updatedAt || '')));
@@ -329,17 +426,17 @@ app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
   const comment = String(req.body?.completionComment || '').trim();
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.status === 'done');
   if (idx === -1) return res.redirect('/terminado');
 
   db.items[idx] = updateItem(db.items[idx], { completionComment: comment || null });
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/terminado');
 });
 
 app.get('/agendar', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const items = (db.items || [])
     .filter(i => i.list === 'agendar' && i.status !== 'done')
     .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
@@ -361,7 +458,7 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
   const scheduledFor = String(req.body?.scheduledFor || '').trim();
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
   if (idx === -1) return res.redirect('/agendar');
 
@@ -372,13 +469,13 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
     scheduledFor: scheduledFor || null,
   });
 
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/agendar');
 });
 
 app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
   if (idx === -1) return res.redirect('/agendar');
 
@@ -387,12 +484,12 @@ app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
     completedAt: new Date().toISOString(),
     completionComment: null,
   });
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/agendar');
 });
 
 app.get('/delegar', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const groupBy = String(req.query?.groupBy || 'date') === 'owner' ? 'owner' : 'date';
   const ownerFilter = String(req.query?.owner || '').trim().toLowerCase();
   const error = String(req.query?.error || '');
@@ -440,7 +537,7 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
   const delegatedFor = String(req.body?.delegatedFor || '').trim();
   const delegatedTo = String(req.body?.delegatedTo || '').trim();
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
   if (idx === -1) return res.redirect('/delegar?error=not_found');
 
@@ -456,12 +553,12 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
     delegatedTo,
   });
 
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/delegar');
 });
 
 app.get('/desglosar', async (req, res) => {
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const items = (db.items || [])
     .filter(i => i.list === 'desglosar' && i.status !== 'done')
     .map(i => withDesglosarMeta(i))
@@ -478,7 +575,7 @@ app.get('/desglosar', async (req, res) => {
 
 app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
   if (idx === -1) return res.redirect('/desglosar');
 
@@ -490,7 +587,7 @@ app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
     title,
     objective,
   }));
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/desglosar');
 });
 
@@ -499,14 +596,14 @@ app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
   const text = String(req.body?.subtask || '').trim();
   if (!text) return res.redirect('/desglosar');
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
   if (idx === -1) return res.redirect('/desglosar');
 
   const current = withDesglosarMeta(db.items[idx]);
   const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
   db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/desglosar');
 });
 
@@ -516,7 +613,7 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
   const destination = String(req.body?.destination || '');
   if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.status(400).send('Bad destination');
 
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
   if (idx === -1) return res.redirect('/desglosar');
 
@@ -544,13 +641,13 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
   db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
   db.items = [newTask, ...(db.items || [])];
 
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('/desglosar');
 });
 
 for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar' && x.key !== 'desglosar')) {
   app.get(`/${d.key}`, async (req, res) => {
-    const db = await loadDb();
+    const db = await loadReqDb(req);
     const items = (db.items || [])
       .filter(i => i.list === d.key && i.status !== 'done')
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -567,9 +664,9 @@ for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar
 
 app.post('/items/:id/delete', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
-  const db = await loadDb();
+  const db = await loadReqDb(req);
   db.items = (db.items || []).filter(i => i.id !== id);
-  await saveDb(db);
+  await saveReqDb(req, db);
   return res.redirect('back');
 });
 

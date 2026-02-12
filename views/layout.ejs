@@ -13,7 +13,7 @@
         <h1 class="text-2xl font-semibold">GTD_Neto</h1>
         <p class="text-sm text-slate-600">Dashboard general + flujo Collect -> Destino</p>
       </div>
-      <nav class="text-sm flex flex-wrap gap-2">
+      <nav class="text-sm flex flex-wrap gap-2 items-center">
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/">Dashboard</a>
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/collect">Collect</a>
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/hacer">Hacer</a>
@@ -22,6 +22,12 @@
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/desglosar">Desglosar</a>
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/no-hacer">No hacer</a>
         <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/terminado">Terminado</a>
+        <% if (useSupabase && authUser) { %>
+          <span class="text-xs text-slate-500"><%= authUser.email %></span>
+          <form method="POST" action="/auth/logout">
+            <button class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100">Salir</button>
+          </form>
+        <% } %>
       </nav>
     </div>
 

@@ -1,0 +1,16 @@
+<div class="max-w-md mx-auto bg-white border rounded-xl p-5">
+  <h2 class="text-lg font-semibold">Login GTD_Neto</h2>
+  <p class="text-sm text-slate-600 mt-1">Accede con tu usuario de Supabase.</p>
+
+  <form method="POST" action="/auth/login" class="mt-4 space-y-3">
+    <div>
+      <label class="text-xs text-slate-500">Email</label>
+      <input type="email" name="email" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+    </div>
+    <div>
+      <label class="text-xs text-slate-500">Contraseña</label>
+      <input type="password" name="password" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+    </div>
+    <button class="w-full rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Entrar</button>
+  </form>
+</div>
