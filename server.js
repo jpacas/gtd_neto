@@ -106,6 +106,24 @@ function withHacerMeta(item, patch = {}) {
   };
 }
 
+function randomId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Buffer.from(bytes).toString('hex');
+}
+
+function withDesglosarMeta(item, patch = {}) {
+  const objective = String(patch.objective ?? item.objective ?? '').trim();
+  const subtasks = Array.isArray(patch.subtasks ?? item.subtasks)
+    ? (patch.subtasks ?? item.subtasks)
+    : [];
+
+  return {
+    ...patch,
+    objective,
+    subtasks,
+  };
+}
+
 app.get('/', async (req, res) => {
   const db = await loadDb();
   const items = db.items || [];
@@ -217,10 +235,11 @@ app.post('/collect/:id/send', requireApiKey, async (req, res) => {
     status: 'processed',
   };
 
-  db.items[idx] = updateItem(
-    db.items[idx],
-    destination === 'hacer' ? withHacerMeta(db.items[idx], basePatch) : basePatch
-  );
+  let patch = basePatch;
+  if (destination === 'hacer') patch = withHacerMeta(db.items[idx], basePatch);
+  if (destination === 'desglosar') patch = withDesglosarMeta(db.items[idx], basePatch);
+
+  db.items[idx] = updateItem(db.items[idx], patch);
   await saveDb(db);
   return res.redirect('/collect');
 });
@@ -375,7 +394,95 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
   return res.redirect('/delegar');
 });
 
-for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar')) {
+app.get('/desglosar', async (req, res) => {
+  const db = await loadDb();
+  const items = (db.items || [])
+    .filter(i => i.list === 'desglosar' && i.status !== 'done')
+    .map(i => withDesglosarMeta(i))
+    .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+
+  return renderPage(res, 'desglosar', {
+    title: 'Desglosar',
+    items,
+    destinations: DESTINATIONS.filter(d => ['hacer', 'agendar', 'delegar'].includes(d.key)),
+    needApiKey: Boolean(APP_API_KEY),
+    apiKey: '',
+  });
+});
+
+app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+  if (idx === -1) return res.redirect('/desglosar');
+
+  const current = withDesglosarMeta(db.items[idx]);
+  const title = String(req.body?.title || current.title || current.input || '').trim();
+  const objective = String(req.body?.objective || current.objective || '').trim();
+
+  db.items[idx] = updateItem(current, withDesglosarMeta(current, {
+    title,
+    objective,
+  }));
+  await saveDb(db);
+  return res.redirect('/desglosar');
+});
+
+app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const text = String(req.body?.subtask || '').trim();
+  if (!text) return res.redirect('/desglosar');
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+  if (idx === -1) return res.redirect('/desglosar');
+
+  const current = withDesglosarMeta(db.items[idx]);
+  const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
+  db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+  await saveDb(db);
+  return res.redirect('/desglosar');
+});
+
+app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const subId = String(req.params.subId);
+  const destination = String(req.body?.destination || '');
+  if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.status(400).send('Bad destination');
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+  if (idx === -1) return res.redirect('/desglosar');
+
+  const current = withDesglosarMeta(db.items[idx]);
+  const subtasks = [...(current.subtasks || [])];
+  const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+  if (subIdx === -1) return res.redirect('/desglosar');
+
+  const subtask = subtasks[subIdx];
+  const text = String(subtask.text || '').trim();
+  if (!text) return res.redirect('/desglosar');
+
+  const base = newItem({ input: text });
+  let newTask = updateItem(base, {
+    title: text,
+    kind: 'action',
+    list: destination,
+    status: 'processed',
+    sourceProjectId: id,
+    sourceSubtaskId: subId,
+  });
+  if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
+
+  subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
+  db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+  db.items = [newTask, ...(db.items || [])];
+
+  await saveDb(db);
+  return res.redirect('/desglosar');
+});
+
+for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar' && x.key !== 'desglosar')) {
   app.get(`/${d.key}`, async (req, res) => {
     const db = await loadDb();
     const items = (db.items || [])
