@@ -571,6 +571,10 @@ app.post('/items/:id/delete', requireApiKey, async (req, res) => {
 
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
 
-app.listen(PORT, HOST, () => {
-  console.log(`[gtd_neto] listening on http://${HOST}:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, HOST, () => {
+    console.log(`[gtd_neto] listening on http://${HOST}:${PORT}`);
+  });
+}
+
+export default app;
