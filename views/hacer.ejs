@@ -41,6 +41,12 @@
         </form>
 
         <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar texto">✏️</button>
+
+        <form method="POST" action="/hacer/<%= it.id %>/complete" class="hacer-complete-form">
+          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+          <input type="hidden" name="comment" value="" />
+          <button type="button" class="text-[11px] px-2 py-1 rounded border bg-emerald-50 text-emerald-700 hover:bg-emerald-100 finalize-btn">Finalizada</button>
+        </form>
       </div>
 
       <% if (!it.actionableOk) { %>
@@ -85,6 +91,19 @@
           const hidden = form.querySelector(`input[name="${field}"]`);
           if (!hidden) return;
           hidden.value = String(next);
+          form.submit();
+        });
+      });
+
+      root.querySelectorAll('.finalize-btn').forEach((btn) => {
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => {
+          const form = btn.closest('.hacer-complete-form');
+          if (!form) return;
+          const comment = window.prompt('Comentario opcional de cierre (puede ir vacío):', '') || '';
+          const input = form.querySelector('input[name="comment"]');
+          if (input) input.value = comment.trim();
           form.submit();
         });
       });

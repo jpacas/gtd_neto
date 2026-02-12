@@ -130,6 +130,7 @@ app.get('/', async (req, res) => {
   const items = db.items || [];
 
   const collectCount = items.filter(i => i.list === 'collect' && i.status !== 'done').length;
+  const doneCount = items.filter(i => i.status === 'done').length;
   const cards = [
     { label: 'Collect', count: collectCount, href: '/collect', hint: 'Captura rápida' },
     ...DESTINATIONS.map(d => ({
@@ -138,6 +139,7 @@ app.get('/', async (req, res) => {
       href: `/${d.key}`,
       hint: d.hint,
     })),
+    { label: 'Terminado', count: doneCount, href: '/terminado', hint: 'Historial de completadas' },
   ];
 
   return renderPage(res, 'dashboard', {
@@ -286,6 +288,50 @@ app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
   db.items[idx] = updateItem(current, withHacerMeta(current, patch));
   await saveDb(db);
   return res.redirect('/hacer');
+});
+
+app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const comment = String(req.body?.comment || '').trim();
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
+  if (idx === -1) return res.redirect('/hacer');
+
+  db.items[idx] = updateItem(db.items[idx], {
+    status: 'done',
+    completedAt: new Date().toISOString(),
+    completionComment: comment || null,
+  });
+  await saveDb(db);
+  return res.redirect('/hacer');
+});
+
+app.get('/terminado', async (req, res) => {
+  const db = await loadDb();
+  const items = (db.items || [])
+    .filter(i => i.status === 'done')
+    .sort((a, b) => String(b.completedAt || b.updatedAt || '').localeCompare(String(a.completedAt || a.updatedAt || '')));
+
+  return renderPage(res, 'terminado', {
+    title: 'Terminado',
+    items,
+    needApiKey: Boolean(APP_API_KEY),
+    apiKey: '',
+  });
+});
+
+app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const comment = String(req.body?.completionComment || '').trim();
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.status === 'done');
+  if (idx === -1) return res.redirect('/terminado');
+
+  db.items[idx] = updateItem(db.items[idx], { completionComment: comment || null });
+  await saveDb(db);
+  return res.redirect('/terminado');
 });
 
 app.get('/agendar', async (req, res) => {

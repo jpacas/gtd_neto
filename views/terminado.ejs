@@ -1,0 +1,25 @@
+<h2 class="text-lg font-semibold">Terminado</h2>
+<p class="text-sm text-slate-600 mt-1">Historial de actividades completadas con fecha de cierre y comentario opcional.</p>
+
+<div class="mt-4 space-y-2">
+  <% if (!items.length) { %>
+    <div class="bg-white border rounded-xl p-5 text-sm text-slate-600">Aún no hay actividades terminadas.</div>
+  <% } %>
+
+  <% for (const it of items) { %>
+    <div class="bg-white border rounded-xl p-3">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-sm font-medium"><%= it.title || it.input %></div>
+          <div class="text-xs text-slate-500 mt-1">Finalizada: <%= (it.completedAt || it.updatedAt || '').slice(0, 10) %> · Origen: <%= it.list || '-' %></div>
+        </div>
+      </div>
+
+      <form method="POST" action="/terminado/<%= it.id %>/comment" class="mt-2 flex gap-2 items-center">
+        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+        <input type="text" name="completionComment" value="<%= it.completionComment || '' %>" placeholder="Comentario opcional" class="flex-1 border rounded-lg px-2.5 py-1.5 text-sm" />
+        <button class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Guardar</button>
+      </form>
+    </div>
+  <% } %>
+</div>
