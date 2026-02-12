@@ -1,15 +1,54 @@
 <h2 class="text-lg font-semibold">Collect</h2>
-<p class="text-sm text-slate-600 mt-1">Captura todo en texto y luego decide destino.</p>
+<p class="text-sm text-slate-600 mt-1">Captura rápido. Si una actividad no está clara, se marca en rojo.</p>
 
-<div class="mt-4 bg-white border rounded-xl p-5">
-  <form method="POST" action="/collect/add" class="space-y-3" id="collectForm">
-    <textarea id="collectInput" name="input" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe una actividad, idea o proyecto..."></textarea>
+<div class="mt-4 bg-white border rounded-xl p-4">
+  <form method="POST" action="/collect/add" class="space-y-2" id="collectForm">
+    <textarea id="collectInput" name="input" rows="2" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe una actividad..."></textarea>
     <% if (needApiKey) { %>
       <input name="apiKey" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="API key" />
     <% } %>
-    <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Agregar a Collect</button>
-    <p class="text-xs text-slate-500">Tip: Enter para agregar · Shift+Enter para salto de línea.</p>
+    <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Agregar</button>
+    <p class="text-xs text-slate-500">Enter agrega · Shift+Enter salto de línea.</p>
   </form>
+</div>
+
+<div id="collectList" class="mt-4 divide-y rounded-xl border bg-white overflow-hidden">
+  <% if (!items.length) { %>
+    <div id="collectEmpty" class="p-4 text-sm text-slate-600">Collect está vacío.</div>
+  <% } else { %>
+    <div id="collectEmpty" class="p-4 text-sm text-slate-600 hidden">Collect está vacío.</div>
+  <% } %>
+
+  <% for (const it of items) { %>
+    <div class="px-3 py-2 <%= it.actionableOk ? '' : 'bg-red-50' %>">
+      <div class="flex items-center gap-2">
+        <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
+          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+          <input name="input" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1 text-sm" />
+          <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
+        </form>
+
+        <div class="collect-text-row flex-1 min-w-0" data-id="<%= it.id %>">
+          <span class="text-sm truncate"><%= it.title || it.input %></span>
+        </div>
+
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">
+          ✏️
+        </button>
+
+        <form method="POST" action="/collect/<%= it.id %>/send" class="flex items-center gap-1">
+          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+          <% for (const d of destinations) { %>
+            <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button>
+          <% } %>
+        </form>
+      </div>
+
+      <% if (!it.actionableOk) { %>
+        <div class="text-[11px] text-red-700 mt-1"><%= it.actionableFeedback || 'Redacción poco accionable' %></div>
+      <% } %>
+    </div>
+  <% } %>
 </div>
 
 <script>
@@ -19,23 +58,79 @@
     const addBtn = document.getElementById('collectAddBtn');
     if (!form || !input || !addBtn) return;
 
-    const destinationButtons = `<% for (const d of destinations) { %><button name="destination" value="<%= d.key %>" class="text-xs px-2.5 py-1 rounded-lg bg-white border hover:bg-slate-50"><%= d.label %></button><% } %>`;
+    let isSubmitting = false;
+    const destinationButtons = `<% for (const d of destinations) { %><button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button><% } %>`;
+
+    function attachEditHandlers(root = document) {
+      root.querySelectorAll('.edit-toggle').forEach((btn) => {
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const edit = document.querySelector(`.collect-edit-form[data-id="${id}"]`);
+          const row = document.querySelector(`.collect-text-row[data-id="${id}"]`);
+          if (!edit || !row) return;
+          edit.classList.remove('hidden');
+          edit.classList.add('flex');
+          row.classList.add('hidden');
+          const field = edit.querySelector('input[name="input"]');
+          if (field) field.focus();
+        });
+      });
+    }
 
     function buildRow(item) {
+      const actionableOk = !!item.actionableOk;
       const wrapper = document.createElement('div');
-      wrapper.className = 'bg-white border rounded-lg p-3';
+      wrapper.className = `px-3 py-2 ${actionableOk ? '' : 'bg-red-50'}`;
       wrapper.innerHTML = `
-        <div class="text-sm font-medium"></div>
-        <form method="POST" action="/collect/${item.id}/send" class="mt-2 flex flex-wrap gap-2 items-center">
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-          ${destinationButtons}
-        </form>
+        <div class="flex items-center gap-2">
+          <form method="POST" action="/collect/${item.id}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${item.id}">
+            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+            <input name="input" class="w-full border rounded-md px-2 py-1 text-sm" />
+            <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
+          </form>
+          <div class="collect-text-row flex-1 min-w-0" data-id="${item.id}"><span class="text-sm truncate"></span></div>
+          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${item.id}" title="Editar">✏️</button>
+          <form method="POST" action="/collect/${item.id}/send" class="flex items-center gap-1">
+            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
+            ${destinationButtons}
+          </form>
+        </div>
+        <div class="text-[11px] text-red-700 mt-1 ${actionableOk ? 'hidden' : ''}"></div>
       `;
-      wrapper.querySelector('.font-medium').textContent = item.title || item.input || '';
+      const val = item.title || item.input || '';
+      wrapper.querySelector('.collect-text-row span').textContent = val;
+      wrapper.querySelector('.collect-edit-form input[name="input"]').value = val;
+      if (!actionableOk) {
+        wrapper.querySelector('.text-red-700').textContent = item.actionableFeedback || 'Redacción poco accionable';
+      }
       return wrapper;
     }
 
-    let isSubmitting = false;
+    function evaluateActionability(text) {
+      const t = String(text || '').trim();
+      const words = t.split(/\s+/).filter(Boolean);
+      const first = (words[0] || '').toLowerCase();
+      const vague = ['hacer', 'ver', 'revisar tema', 'pendiente', 'trabajar', 'organizar'];
+      const startsWithInfinitive = /[aá]r$|er$|ir$/.test(first);
+      const hasEnoughWords = words.length >= 2;
+      const tooLong = t.length > 140;
+      const hasVaguePattern = vague.some(v => t.toLowerCase() === v || t.toLowerCase().startsWith(v + ' '));
+
+      let score = 0;
+      if (startsWithInfinitive) score += 40;
+      if (hasEnoughWords) score += 30;
+      if (!tooLong) score += 20;
+      if (!hasVaguePattern) score += 10;
+
+      const feedback = [];
+      if (!startsWithInfinitive) feedback.push('Empieza con un verbo en infinitivo.');
+      if (!hasEnoughWords) feedback.push('Hazla más específica.');
+      if (tooLong) feedback.push('Hazla más corta.');
+      if (hasVaguePattern) feedback.push('Evita frases vagas.');
+      return { actionableOk: score >= 70, actionableFeedback: feedback.join(' ') };
+    }
 
     async function submitQuick() {
       const text = input.value.trim();
@@ -59,9 +154,11 @@
 
         const list = document.getElementById('collectList');
         const empty = document.getElementById('collectEmpty');
-        const row = buildRow(data.item);
+        const computed = evaluateActionability(data.item.title || data.item.input || '');
+        const row = buildRow({ ...data.item, ...computed });
         if (list) list.insertBefore(row, list.children[1] || null);
         if (empty) empty.classList.add('hidden');
+        attachEditHandlers(row);
 
         input.value = '';
         input.focus();
@@ -73,9 +170,7 @@
       }
     }
 
-    addBtn.addEventListener('click', () => {
-      submitQuick();
-    });
+    addBtn.addEventListener('click', submitQuick);
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -84,27 +179,7 @@
       }
     });
 
+    attachEditHandlers();
     input.focus();
   })();
 </script>
-
-<div id="collectList" class="mt-4 space-y-2">
-  <% if (!items.length) { %>
-    <div id="collectEmpty" class="text-sm text-slate-600">Collect está vacío.</div>
-  <% } else { %>
-    <div id="collectEmpty" class="text-sm text-slate-600 hidden">Collect está vacío.</div>
-  <% } %>
-
-  <% for (const it of items) { %>
-    <div class="bg-white border rounded-lg p-3">
-      <div class="text-sm font-medium"><%= it.title || it.input %></div>
-
-      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-2 flex flex-wrap gap-2 items-center">
-        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
-        <% for (const d of destinations) { %>
-          <button name="destination" value="<%= d.key %>" class="text-xs px-2.5 py-1 rounded-lg bg-white border hover:bg-slate-50"><%= d.label %></button>
-        <% } %>
-      </form>
-    </div>
-  <% } %>
-</div>

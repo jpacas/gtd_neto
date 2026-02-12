@@ -132,6 +132,7 @@ app.get('/collect', async (req, res) => {
   const db = await loadDb();
   const items = (db.items || [])
     .filter(i => i.list === 'collect' && i.status !== 'done')
+    .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
   return renderPage(res, 'collect', {
@@ -183,6 +184,23 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
     return res.json({ ok: true, item, deduped: false });
   }
 
+  return res.redirect('/collect');
+});
+
+app.post('/collect/:id/update', requireApiKey, async (req, res) => {
+  const id = String(req.params.id);
+  const input = String(req.body?.input || '').trim();
+  if (!input) return res.redirect('/collect');
+
+  const db = await loadDb();
+  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'collect');
+  if (idx === -1) return res.redirect('/collect');
+
+  db.items[idx] = updateItem(db.items[idx], {
+    input,
+    title: input,
+  });
+  await saveDb(db);
   return res.redirect('/collect');
 });
 
