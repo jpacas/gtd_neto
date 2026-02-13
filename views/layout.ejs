@@ -27,27 +27,30 @@
       <div class="w-full md:w-auto flex flex-col gap-2 md:items-end">
         <nav class="text-xs md:text-sm flex flex-col gap-2 items-start md:items-end" aria-label="Navegación principal">
           <div class="flex flex-wrap items-center gap-1.5 md:gap-2 rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium" href="/">Dashboard</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/stats" title="Estadísticas">Estadísticas</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium" href="/">🧭 Dashboard</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/stats" title="Estadísticas">📈 Estadísticas</a>
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5 md:gap-2 rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/collect">Collect</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/hacer">Hacer</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/agendar">Agendar</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/delegar">Delegar</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/desglosar">Desglosar</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/no-hacer">No hacer</a>
-            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/terminado">Terminado</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/collect">📥 Collect</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/hacer">✅ Hacer</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/agendar">🗓️ Agendar</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/delegar">🤝 Delegar</a>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5 md:gap-2 rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/desglosar">🧩 Desglosar</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/no-hacer">🚫 No hacer</a>
+            <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/terminado">🎯 Terminado</a>
           </div>
         </nav>
 
         <% if (useSupabase && authUser) { %>
           <div class="flex items-center gap-2 rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
-            <span class="px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300"><%= authUser.email %></span>
+            <span class="px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">👤 <%= authUser.email %></span>
             <form method="POST" action="/auth/logout">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <button class="px-2 py-1 md:px-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700 transition-colors">Salir</button>
+              <button class="px-2 py-1 md:px-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700 transition-colors">🚪 Salir</button>
             </form>
           </div>
         <% } %>
