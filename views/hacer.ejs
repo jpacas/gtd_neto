@@ -40,7 +40,6 @@
       <div class="flex items-center gap-2">
         <form method="POST" action="/hacer/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 hacer-edit-form" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1.5 text-sm" />
           <input type="number" min="1" max="5" name="urgency" value="<%= it.urgency || 3 %>" class="w-14 border rounded-md px-2 py-1.5 text-sm text-center" title="Urgencia" />
           <input type="number" min="1" max="5" name="importance" value="<%= it.importance || 3 %>" class="w-14 border rounded-md px-2 py-1.5 text-sm text-center" title="Importancia" />
@@ -49,7 +48,6 @@
 
         <form method="POST" action="/hacer/<%= it.id %>/update" class="hacer-view-row flex-1 min-w-0 flex items-center gap-2" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="hidden" name="title" value="<%= it.title || it.input %>" />
           <input type="hidden" name="urgency" value="<%= it.urgency || 3 %>" />
           <input type="hidden" name="importance" value="<%= it.importance || 3 %>" />
@@ -65,7 +63,6 @@
 
         <form method="POST" action="/hacer/<%= it.id %>/complete" class="hacer-complete-form">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="hidden" name="comment" value="" />
           <button type="button" class="text-[11px] px-2 py-1 rounded border bg-emerald-50 text-emerald-700 hover:bg-emerald-100 finalize-btn">Finalizada</button>
         </form>
@@ -81,7 +78,7 @@
   <% } %>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     function attachHandlers(root = document) {
       root.querySelectorAll('.edit-toggle').forEach((btn) => {
@@ -103,11 +100,17 @@
       root.querySelectorAll('.quick-edit').forEach((btn) => {
         if (btn.dataset.bound === '1') return;
         btn.dataset.bound = '1';
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const field = btn.dataset.field;
           const current = Number(btn.dataset.value || 3);
           const label = field === 'urgency' ? 'Urgencia (1-5)' : 'Importancia (1-5)';
-          const next = Number(window.prompt(label, String(current)));
+          const raw = await window.promptModal({
+            title: label,
+            defaultValue: String(current),
+            placeholder: 'Ingresa un valor entre 1 y 5',
+          });
+          if (raw == null) return;
+          const next = Number(raw);
           if (!Number.isFinite(next)) return;
           if (next < 1 || next > 5) return;
 
@@ -123,10 +126,16 @@
       root.querySelectorAll('.finalize-btn').forEach((btn) => {
         if (btn.dataset.bound === '1') return;
         btn.dataset.bound = '1';
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const form = btn.closest('.hacer-complete-form');
           if (!form) return;
-          const comment = window.prompt('Comentario opcional de cierre (puede ir vacío):', '') || '';
+          const comment = await window.promptModal({
+            title: 'Comentario opcional de cierre',
+            defaultValue: '',
+            placeholder: 'Comentario (opcional)',
+            allowEmpty: true,
+          });
+          if (comment == null) return;
           const input = form.querySelector('input[name="comment"]');
           if (input) input.value = comment.trim();
           form.submit();

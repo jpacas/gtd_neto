@@ -38,6 +38,71 @@ function confirmAction(message, onConfirm, onCancel) {
   }
 }
 
+function promptModal({ title = 'Ingresar valor', defaultValue = '', placeholder = '', allowEmpty = false } = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    const panel = document.createElement('div');
+    panel.className = 'w-full max-w-md rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-2xl';
+
+    const heading = document.createElement('h3');
+    heading.className = 'text-sm font-semibold mb-3 dark:text-slate-100';
+    heading.textContent = title;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm';
+    input.value = String(defaultValue || '');
+    input.placeholder = placeholder;
+
+    const actions = document.createElement('div');
+    actions.className = 'mt-3 flex justify-end gap-2';
+
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'px-3 py-1.5 text-sm rounded-lg border dark:border-slate-700';
+    cancel.textContent = 'Cancelar';
+
+    const accept = document.createElement('button');
+    accept.type = 'button';
+    accept.className = 'px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white';
+    accept.textContent = 'Aceptar';
+
+    actions.append(cancel, accept);
+    panel.append(heading, input, actions);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    const close = (value) => {
+      overlay.remove();
+      resolve(value);
+    };
+
+    cancel.addEventListener('click', () => close(null));
+    accept.addEventListener('click', () => {
+      const val = String(input.value || '').trim();
+      if (!allowEmpty && !val) return;
+      close(val);
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close(null);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close(null);
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        accept.click();
+      }
+    });
+
+    input.focus();
+    input.select();
+  });
+}
+
 // Debounce helper
 function debounce(func, wait) {
   let timeout;
@@ -126,6 +191,20 @@ function setupFormValidation(formId, rules) {
   });
 }
 
+function bindAutoLoadingToPostForms() {
+  document.querySelectorAll('form').forEach((form) => {
+    if (form.dataset.autoLoadingBound === '1') return;
+    if (String(form.method || '').toUpperCase() !== 'POST') return;
+    if (form.dataset.autoLoading === 'off') return;
+
+    form.dataset.autoLoadingBound = '1';
+    form.addEventListener('submit', () => {
+      const submitBtn = form.querySelector('button[type="submit"], button:not([type])');
+      if (submitBtn) LoadingManager.show(submitBtn);
+    });
+  });
+}
+
 function validateField(input, rule) {
   const value = input.value;
   let errorMessage = '';
@@ -178,7 +257,13 @@ function validateField(input, rule) {
 // Exportar al scope global
 window.LoadingManager = LoadingManager;
 window.confirmAction = confirmAction;
+window.promptModal = promptModal;
 window.debounce = debounce;
 window.Validators = Validators;
 window.setupFormValidation = setupFormValidation;
 window.validateField = validateField;
+window.bindAutoLoadingToPostForms = bindAutoLoadingToPostForms;
+
+document.addEventListener('DOMContentLoaded', () => {
+  bindAutoLoadingToPostForms();
+});

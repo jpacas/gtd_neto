@@ -34,7 +34,6 @@
       <div class="flex items-center gap-2">
         <form method="POST" action="/agendar/<%= it.id %>/update" class="agendar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="hidden" name="title" value="<%= it.title || it.input %>" />
           <input type="date" name="scheduledFor" value="<%= it.scheduledFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
         </form>
@@ -47,7 +46,6 @@
 
         <form method="POST" action="/agendar/<%= it.id %>/complete">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <button class="text-[11px] px-2 py-1 rounded border bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Finalizada</button>
         </form>
       </div>
@@ -62,17 +60,21 @@
   <% } %>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     document.querySelectorAll('.edit-toggle').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         const row = document.querySelector(`.agendar-view-row[data-id="${id}"]`);
         const quickForm = document.querySelector(`.agendar-quick-form[data-id="${id}"]`);
         if (!row || !quickForm) return;
 
         const currentTitle = row.dataset.title || '';
-        const nextTitle = window.prompt('Editar actividad', currentTitle);
+        const nextTitle = await window.promptModal({
+          title: 'Editar actividad',
+          defaultValue: currentTitle,
+          placeholder: 'Describe la actividad',
+        });
         if (nextTitle == null) return;
         const title = String(nextTitle).trim();
         if (!title) return;
