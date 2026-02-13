@@ -10,7 +10,11 @@
     "build": "npm run build:css",
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "dev:all": "npm run watch:css & npm run dev"
+    "dev:all": "npm run watch:css & npm run dev",
+    "lint": "node scripts/lint.mjs",
+    "format:check": "node scripts/format-check.mjs",
+    "test": "node --test",
+    "check": "npm run lint && npm run format:check && npm run test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
