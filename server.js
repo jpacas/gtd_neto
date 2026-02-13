@@ -307,6 +307,7 @@ function renderPage(res, view, data) {
       authUser: data?.authUser || res.locals?.authUser || null,
       csrfToken,
       cspNonce,
+      hideAppNav: Boolean(data?.hideAppNav),
     })
   );
 }
@@ -326,6 +327,7 @@ app.get('/login', async (req, res) => {
     title: 'Login',
     needApiKey: false,
     message: String(req.query?.message || ''),
+    hideAppNav: true,
   });
 });
 
@@ -1008,47 +1010,7 @@ app.get('/api/tags', async (req, res) => {
 });
 
 app.get('/search', async (req, res) => {
-  const query = sanitizeInput(String(req.query?.q || '').trim().toLowerCase());
-
-  if (!query) {
-    return renderPage(res, 'dashboard', {
-      title: 'Búsqueda',
-      cards: [],
-      needApiKey: Boolean(APP_API_KEY),
-    });
-  }
-
-  const db = await loadReqDb(req);
-  const allItems = db.items || [];
-
-  // Buscar en títulos, inputs y comentarios
-  const results = allItems.filter(item => {
-    const searchText = [
-      item.title,
-      item.input,
-      item.completionComment,
-      item.objective,
-      item.delegatedTo,
-    ].filter(Boolean).join(' ').toLowerCase();
-
-    return searchText.includes(query);
-  });
-
-  // Agrupar por lista
-  const grouped = {};
-  results.forEach(item => {
-    const list = item.list || 'collect';
-    if (!grouped[list]) grouped[list] = [];
-    grouped[list].push(item);
-  });
-
-  return renderPage(res, 'search-results', {
-    title: `Búsqueda: ${query}`,
-    query,
-    results,
-    grouped,
-    resultCount: results.length,
-  });
+  return res.redirect('/');
 });
 
 app.get('/export', async (req, res) => {
