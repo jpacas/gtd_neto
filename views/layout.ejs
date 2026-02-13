@@ -22,13 +22,6 @@
           <h1 class="text-xl md:text-2xl font-semibold dark:text-slate-100">GTD_Neto</h1>
           <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400">Dashboard general + flujo Collect -> Destino</p>
         </div>
-        <button
-          id="shortcuts-help-btn"
-          class="px-2 py-1 text-xs rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          title="Atajos de teclado"
-        >
-          ⌨️ ?
-        </button>
       </div>
       <nav class="text-xs md:text-sm flex flex-wrap gap-1.5 md:gap-2 items-center" aria-label="Navegación principal">
         <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/">📊 <span class="hidden sm:inline">Dashboard</span></a>
@@ -64,7 +57,6 @@
   <script nonce="<%= cspNonce %>" src="/public/js/toast.js"></script>
   <script nonce="<%= cspNonce %>" src="/public/js/utils.js"></script>
   <script nonce="<%= cspNonce %>" src="/public/js/tags.js"></script>
-  <script nonce="<%= cspNonce %>" src="/public/js/shortcuts.js"></script>
 
   <!-- PWA Service Worker -->
   <script nonce="<%= cspNonce %>">
@@ -76,13 +68,6 @@
       });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const helpBtn = document.getElementById('shortcuts-help-btn');
-      if (!helpBtn) return;
-      helpBtn.addEventListener('click', () => {
-        window.shortcutManager?.showHelp();
-      });
-    });
   </script>
 
   <!-- Flash message to toast conversion -->

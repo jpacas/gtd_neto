@@ -21,28 +21,5 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "business"],
-  "shortcuts": [
-    {
-      "name": "Agregar a Collect",
-      "short_name": "Collect",
-      "description": "Captura rápida de nueva tarea",
-      "url": "/collect",
-      "icons": [{ "src": "/public/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Ver Hacer",
-      "short_name": "Hacer",
-      "description": "Ver tareas pendientes",
-      "url": "/hacer",
-      "icons": [{ "src": "/public/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Estadísticas",
-      "short_name": "Stats",
-      "description": "Ver productividad",
-      "url": "/stats",
-      "icons": [{ "src": "/public/icon-192.png", "sizes": "192x192" }]
-    }
-  ]
+  "categories": ["productivity", "business"]
 }
