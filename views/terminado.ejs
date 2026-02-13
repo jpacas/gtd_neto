@@ -16,6 +16,7 @@
       </div>
 
       <form method="POST" action="/terminado/<%= it.id %>/comment" class="mt-2" data-autosave-comment="1">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
         <input type="text" name="completionComment" value="<%= it.completionComment || '' %>" placeholder="Comentario opcional" class="w-full border rounded-lg px-2.5 py-1.5 text-sm" />
       </form>

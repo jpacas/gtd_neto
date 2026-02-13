@@ -2,6 +2,19 @@
   <div>
     <h2 class="text-lg font-semibold">Agendar</h2>
     <p class="text-sm text-slate-600 mt-1">Fecha al inicio, actividad después. Ordenado por fecha más próxima primero.</p>
+    <details class="mt-2">
+      <summary class="text-xs text-blue-600 cursor-pointer hover:underline">ℹ️ ¿Cómo se calcula la accionabilidad?</summary>
+      <div class="mt-1 text-xs text-slate-600 bg-slate-50 p-2 rounded">
+        <p class="font-semibold mb-1">Score de accionabilidad (máximo 100):</p>
+        <ul class="list-disc ml-4 space-y-0.5">
+          <li><strong>40 puntos:</strong> Empieza con verbo infinitivo (llamar, enviar, revisar)</li>
+          <li><strong>30 puntos:</strong> Tiene suficientes palabras (mín. 2)</li>
+          <li><strong>20 puntos:</strong> Es concisa (≤140 caracteres)</li>
+          <li><strong>10 puntos:</strong> Evita lenguaje vago</li>
+        </ul>
+        <p class="mt-1">✅ Se considera accionable con ≥70 puntos</p>
+      </div>
+    </details>
   </div>
   <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Ir a Collect</a>
 </div>
@@ -20,6 +33,7 @@
     <div class="px-3 py-2 border-b last:border-b-0 <%= !it.actionableOk ? 'bg-red-50' : (it.scheduledFor ? '' : 'bg-amber-50') %>">
       <div class="flex items-center gap-2">
         <form method="POST" action="/agendar/<%= it.id %>/update" class="agendar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="hidden" name="title" value="<%= it.title || it.input %>" />
           <input type="date" name="scheduledFor" value="<%= it.scheduledFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
@@ -32,6 +46,7 @@
         <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar actividad">✏️</button>
 
         <form method="POST" action="/agendar/<%= it.id %>/complete">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <button class="text-[11px] px-2 py-1 rounded border bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Finalizada</button>
         </form>

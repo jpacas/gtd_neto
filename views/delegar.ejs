@@ -37,6 +37,7 @@
         <div class="px-3 py-2 border-b last:border-b-0 <%= (!it.delegatedFor || !it.delegatedTo) ? 'bg-amber-50' : '' %>">
           <div class="flex items-center gap-2">
             <form method="POST" action="/delegar/<%= it.id %>/update" class="delegar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
               <input type="hidden" name="title" value="<%= it.title || it.input %>" />
               <input type="hidden" name="delegatedTo" value="<%= it.delegatedTo || '' %>" />
@@ -44,6 +45,7 @@
             </form>
 
             <form method="POST" action="/delegar/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 delegar-edit-form" data-id="<%= it.id %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
               <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1.5 text-sm" />
               <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-44 border rounded-md px-2 py-1.5 text-sm" required />

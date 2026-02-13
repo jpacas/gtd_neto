@@ -1,28 +1,30 @@
-<h2 class="text-lg font-semibold">Collect</h2>
-<p class="text-sm text-slate-600 mt-1">Captura rápido y decide destino.</p>
+<h2 class="text-lg font-semibold dark:text-slate-100">Collect</h2>
+<p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Captura rápido y decide destino.</p>
 
-<div class="mt-4 bg-white border rounded-xl p-4">
+<div class="mt-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
   <form method="POST" action="/collect/add" class="space-y-2" id="collectForm">
-    <textarea id="collectInput" name="input" rows="2" class="w-full border rounded-lg px-3 py-2" placeholder="Escribe una actividad..."></textarea>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <textarea id="collectInput" name="input" rows="2" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Escribe una actividad..."></textarea>
     <% if (needApiKey) { %>
-      <input name="apiKey" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="API key" />
+      <input name="apiKey" type="password" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2" placeholder="API key" />
     <% } %>
-    <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700">Agregar</button>
-    <p class="text-xs text-slate-500">Enter agrega · Shift+Enter salto de línea.</p>
+    <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors">Agregar</button>
+    <p class="text-xs text-slate-500 dark:text-slate-400">Enter agrega · Shift+Enter salto de línea.</p>
   </form>
 </div>
 
-<div id="collectList" class="mt-4 divide-y rounded-xl border bg-white overflow-hidden">
+<div id="collectList" class="mt-4 divide-y dark:divide-slate-700 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
   <% if (!items.length) { %>
-    <div id="collectEmpty" class="p-4 text-sm text-slate-600">Collect está vacío.</div>
+    <div id="collectEmpty" class="p-4 text-sm text-slate-600 dark:text-slate-400">Collect está vacío.</div>
   <% } else { %>
-    <div id="collectEmpty" class="p-4 text-sm text-slate-600 hidden">Collect está vacío.</div>
+    <div id="collectEmpty" class="p-4 text-sm text-slate-600 dark:text-slate-400 hidden">Collect está vacío.</div>
   <% } %>
 
   <% for (const it of items) { %>
     <div class="px-3 py-2">
       <div class="flex items-center justify-between gap-2">
         <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input name="input" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1 text-sm" />
           <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
@@ -35,10 +37,19 @@
         <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">✏️</button>
       </div>
 
+      <% if (it.tags && it.tags.length > 0) { %>
+        <div class="mt-1 flex flex-wrap gap-1">
+          <% it.tags.forEach(tag => { %>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"><%= tag %></span>
+          <% }); %>
+        </div>
+      <% } %>
+
       <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
         <% for (const d of destinations) { %>
-          <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button>
+          <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= d.label %></button>
         <% } %>
       </form>
     </div>
@@ -53,6 +64,7 @@
     if (!form || !input || !addBtn) return;
 
     let isSubmitting = false;
+    const csrfToken = '<%= csrfToken %>';
     const destinationButtons = `<% for (const d of destinations) { %><button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button><% } %>`;
 
     function attachEditHandlers(root = document) {
@@ -79,6 +91,7 @@
       wrapper.innerHTML = `
         <div class="flex items-center justify-between gap-2">
           <form method="POST" action="/collect/${item.id}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${item.id}">
+            <input type="hidden" name="_csrf" value="${csrfToken}" />
             <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
             <input name="input" class="w-full border rounded-md px-2 py-1 text-sm" />
             <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
@@ -87,6 +100,7 @@
           <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${item.id}" title="Editar">✏️</button>
         </div>
         <form method="POST" action="/collect/${item.id}/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+          <input type="hidden" name="_csrf" value="${csrfToken}" />
           <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           ${destinationButtons}
         </form>
@@ -100,8 +114,9 @@
     async function submitQuick() {
       const text = input.value.trim();
       if (!text || isSubmitting) return;
+
       isSubmitting = true;
-      addBtn.disabled = true;
+      LoadingManager.show(addBtn);
 
       const formData = new FormData(form);
       const body = new URLSearchParams();
@@ -120,17 +135,20 @@
         const list = document.getElementById('collectList');
         const empty = document.getElementById('collectEmpty');
         const row = buildRow(data.item);
+        row.classList.add('fade-in');
         if (list) list.insertBefore(row, list.children[1] || null);
         if (empty) empty.classList.add('hidden');
         attachEditHandlers(row);
 
         input.value = '';
         input.focus();
-      } catch {
-        form.submit();
+        toast.success('Item agregado correctamente');
+      } catch (err) {
+        toast.error('Error al agregar item. Recargando...');
+        setTimeout(() => form.submit(), 1000);
       } finally {
         isSubmitting = false;
-        addBtn.disabled = false;
+        LoadingManager.hide(addBtn);
       }
     }
 

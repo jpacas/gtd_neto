@@ -3,6 +3,10 @@ import express from 'express';
 import ejs from 'ejs';
 import cookieParser from 'cookie-parser';
 import { createClient } from '@supabase/supabase-js';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import sanitizeHtml from 'sanitize-html';
 
 import { loadDb, saveDb, newItem, updateItem } from './lib/store.js';
 
@@ -27,15 +31,115 @@ const supabaseAuth = (SUPABASE_URL && SUPABASE_ANON_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
 
+// Función de sanitización para prevenir XSS
+function sanitizeInput(input) {
+  if (typeof input !== 'string') return input;
+  return sanitizeHtml(input, {
+    allowedTags: [], // No permitir ningún HTML
+    allowedAttributes: {},
+    disallowedTagsMode: 'escape',
+  }).trim();
+}
+
+// CSRF Protection manual
+function generateCsrfToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Buffer.from(bytes).toString('hex');
+}
+
+function csrfProtection(req, res, next) {
+  // Solo para POST requests
+  if (req.method !== 'POST') return next();
+
+  // Verificar token CSRF
+  const tokenFromBody = req.body?._csrf;
+  const tokenFromSession = req.cookies?.csrf_token;
+
+  if (!tokenFromBody || !tokenFromSession || tokenFromBody !== tokenFromSession) {
+    return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
+  }
+
+  next();
+}
+
+function attachCsrfToken(req, res, next) {
+  // Generar token si no existe
+  if (!req.cookies?.csrf_token) {
+    const token = generateCsrfToken();
+    const isSecure = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+    res.cookie('csrf_token', token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: isSecure,
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    });
+    res.locals.csrfToken = token;
+  } else {
+    res.locals.csrfToken = req.cookies.csrf_token;
+  }
+  next();
+}
+
+// Middlewares de seguridad y performance
+app.use(compression()); // Comprimir respuestas
+
+// Helmet para security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline necesario para scripts inline en templates
+      styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline necesario para estilos inline
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Rate limiting general
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // Límite de 100 requests por ventana
+  message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting estricto para auth
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // Solo 5 intentos de login
+  message: 'Demasiados intentos de autenticación, intenta de nuevo en 15 minutos.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(generalLimiter);
+
 app.set('view engine', 'ejs');
 app.set('views', new URL('./views', import.meta.url).pathname);
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
+app.use(express.json({ limit: '64kb' })); // Para requests JSON
 app.use(cookieParser());
+app.use('/public', express.static(new URL('./public', import.meta.url).pathname));
 app.use('/docs', express.static(new URL('./docs', import.meta.url).pathname));
 
 // Evita ruido de 404 en Vercel cuando el navegador pide favicon por defecto
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/favicon.png', (req, res) => res.status(204).end());
+
+// Service Worker (PWA)
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(new URL('./public/sw.js', import.meta.url).pathname);
+});
 
 function extractApiKey(req) {
   return req.get('x-api-key') || req.body?.apiKey || req.query?.apiKey || '';
@@ -87,7 +191,8 @@ function renderPage(res, view, data) {
   const viewsPath = app.get('views');
   const title = data?.title || 'GTD_Neto';
   const flash = data?.flash || null;
-  const body = ejs.renderFile(`${viewsPath}/${view}.ejs`, data);
+  const csrfToken = res.locals?.csrfToken || '';
+  const body = ejs.renderFile(`${viewsPath}/${view}.ejs`, { ...data, csrfToken });
   return Promise.resolve(body).then(html =>
     res.render('layout', {
       title,
@@ -95,15 +200,18 @@ function renderPage(res, view, data) {
       body: html,
       useSupabase: USE_SUPABASE,
       authUser: data?.authUser || res.locals?.authUser || null,
+      csrfToken,
     })
   );
 }
 
 app.use(attachAuth);
+app.use(attachCsrfToken); // Agregar CSRF token a todas las respuestas
 app.use((req, res, next) => {
   res.locals.authUser = req.auth?.user || null;
   next();
 });
+app.use(csrfProtection); // Validar CSRF en POST requests
 
 app.get('/login', async (req, res) => {
   if (!USE_SUPABASE) return res.redirect('/');
@@ -122,11 +230,11 @@ app.get('/signup', async (req, res) => {
   return renderPage(res, 'signup', { title: 'Registro', needApiKey: false, apiKey: '' });
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', authLimiter, async (req, res) => {
   if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
 
-  const email = String(req.body?.email || '').trim();
-  const password = String(req.body?.password || '');
+  const email = sanitizeInput(String(req.body?.email || '').trim());
+  const password = String(req.body?.password || ''); // No sanitizar password
 
   const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
   if (error || !data?.session) {
@@ -144,11 +252,11 @@ app.post('/auth/login', async (req, res) => {
   return res.redirect('/');
 });
 
-app.post('/auth/signup', async (req, res) => {
+app.post('/auth/signup', authLimiter, async (req, res) => {
   if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
 
-  const email = String(req.body?.email || '').trim();
-  const password = String(req.body?.password || '');
+  const email = sanitizeInput(String(req.body?.email || '').trim());
+  const password = String(req.body?.password || ''); // No sanitizar password
 
   const { error } = await supabaseAuth.auth.signUp({ email, password });
   if (error) {
@@ -163,10 +271,10 @@ app.post('/auth/signup', async (req, res) => {
   return res.redirect('/login?message=Cuenta creada. Revisa tu correo para confirmación si aplica.');
 });
 
-app.post('/auth/forgot', async (req, res) => {
+app.post('/auth/forgot', authLimiter, async (req, res) => {
   if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
 
-  const email = String(req.body?.email || '').trim();
+  const email = sanitizeInput(String(req.body?.email || '').trim());
   if (!email) return res.redirect('/login?message=Ingresa tu correo para recuperar contraseña.');
 
   const redirectTo = `${req.protocol}://${req.get('host')}/login?message=Contraseña actualizada. Ya puedes iniciar sesión.`;
@@ -236,7 +344,13 @@ function withHacerMeta(item, patch = {}) {
 
   const title = String(patch.title ?? item.title ?? item.input ?? '').trim();
   const qa = evaluateActionability(title);
-  const priorityScore = (urgency * importance) + (estimateMin <= 10 ? 2 : 0);
+  const priorityScore = urgency * importance;
+
+  // Validar si la tarea debería ir a Desglosar por duración
+  let durationWarning = null;
+  if (estimateMinRaw > 10) {
+    durationWarning = `Esta tarea requiere más de 10 minutos (${estimateMinRaw} min). Considera moverla a Desglosar para dividirla en pasos más pequeños.`;
+  }
 
   return {
     ...patch,
@@ -245,6 +359,7 @@ function withHacerMeta(item, patch = {}) {
     importance,
     estimateMin,
     priorityScore,
+    durationWarning,
     ...qa,
   };
 }
@@ -291,6 +406,68 @@ app.get('/', async (req, res) => {
   });
 });
 
+app.get('/stats', async (req, res) => {
+  const db = await loadReqDb(req);
+  const items = db.items || [];
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - 7);
+  const monthStart = new Date(todayStart);
+  monthStart.setDate(monthStart.getDate() - 30);
+
+  const completedItems = items.filter(i => i.status === 'done' && i.completedAt);
+
+  // Stats básicas
+  const stats = {
+    total: items.length,
+    active: items.filter(i => i.status !== 'done').length,
+    completed: completedItems.length,
+    completedToday: completedItems.filter(i => new Date(i.completedAt) >= todayStart).length,
+    completedWeek: completedItems.filter(i => new Date(i.completedAt) >= weekStart).length,
+    completedMonth: completedItems.filter(i => new Date(i.completedAt) >= monthStart).length,
+  };
+
+  // Items por lista
+  const byList = {};
+  DESTINATIONS.forEach(d => {
+    byList[d.key] = items.filter(i => i.list === d.key && i.status !== 'done').length;
+  });
+  byList.collect = items.filter(i => i.list === 'collect' && i.status !== 'done').length;
+
+  // Últimos 7 días de actividad
+  const last7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(todayStart);
+    date.setDate(date.getDate() - i);
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    const count = completedItems.filter(item => {
+      const completedDate = new Date(item.completedAt);
+      return completedDate >= date && completedDate < nextDate;
+    }).length;
+
+    last7Days.push({
+      date: date.toLocaleDateString('es', { weekday: 'short', day: 'numeric' }),
+      count,
+    });
+  }
+
+  // Calcular promedio
+  const avgPerDay = stats.completedWeek / 7;
+
+  return renderPage(res, 'stats', {
+    title: 'Estadísticas',
+    stats,
+    byList,
+    last7Days,
+    avgPerDay: avgPerDay.toFixed(1),
+    maxCount: Math.max(...last7Days.map(d => d.count), 1),
+  });
+});
+
 app.get('/collect', async (req, res) => {
   const db = await loadReqDb(req);
   const items = (db.items || [])
@@ -307,7 +484,7 @@ app.get('/collect', async (req, res) => {
 });
 
 app.post('/collect/add', requireApiKey, async (req, res) => {
-  const input = String(req.body?.input || '').trim();
+  const input = sanitizeInput(String(req.body?.input || ''));
   if (!input) {
     if (String(req.get('accept') || '').includes('application/json')) {
       return res.status(400).json({ ok: false, error: 'empty_input' });
@@ -350,8 +527,8 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
 });
 
 app.post('/collect/:id/update', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const input = String(req.body?.input || '').trim();
+  const id = sanitizeInput(String(req.params.id));
+  const input = sanitizeInput(String(req.body?.input || ''));
   if (!input) return res.redirect('/collect');
 
   const db = await loadReqDb(req);
@@ -367,11 +544,12 @@ app.post('/collect/:id/update', requireApiKey, async (req, res) => {
 });
 
 app.post('/collect/:id/send', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const destination = String(req.body?.destination || '');
+  const id = sanitizeInput(String(req.params.id));
+  const destination = sanitizeInput(String(req.body?.destination || ''));
   if (!destinationByKey(destination)) return res.status(400).send('Bad destination');
 
   const db = await loadReqDb(req);
+  // Validación de owner implícita: loadReqDb solo carga items del usuario actual
   const idx = (db.items || []).findIndex(i => i.id === id);
   if (idx === -1) return res.redirect('/collect');
 
@@ -387,6 +565,29 @@ app.post('/collect/:id/send', requireApiKey, async (req, res) => {
   db.items[idx] = updateItem(db.items[idx], patch);
   await saveReqDb(req, db);
   return res.redirect('/collect');
+});
+
+app.post('/items/:id/tags', requireApiKey, async (req, res) => {
+  const id = sanitizeInput(String(req.params.id));
+  const tagsInput = sanitizeInput(String(req.body?.tags || ''));
+
+  // Parse tags: split por comas, trim, filtrar vacíos, lowercase
+  const tags = tagsInput
+    .split(',')
+    .map(t => t.trim().toLowerCase())
+    .filter(t => t.length > 0 && t.length <= 20)
+    .slice(0, 5); // Máximo 5 tags
+
+  const db = await loadReqDb(req);
+  const idx = (db.items || []).findIndex(i => i.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ ok: false, error: 'Item not found' });
+  }
+
+  db.items[idx] = updateItem(db.items[idx], { tags });
+  await saveReqDb(req, db);
+
+  return res.json({ ok: true, tags });
 });
 
 app.get('/hacer', async (req, res) => {
@@ -414,14 +615,14 @@ app.post('/hacer/add', requireApiKey, async (req, res) => {
 });
 
 app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
+  const id = sanitizeInput(String(req.params.id));
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
   if (idx === -1) return res.redirect('/hacer');
 
   const current = db.items[idx];
   const patch = {
-    title: String(req.body?.title || current.title || current.input || '').trim(),
+    title: sanitizeInput(String(req.body?.title || current.title || current.input || '')),
     urgency: Number(req.body?.urgency || current.urgency || 3),
     importance: Number(req.body?.importance || current.importance || 3),
     estimateMin: Number(req.body?.estimateMin || current.estimateMin || 10),
@@ -433,8 +634,8 @@ app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
 });
 
 app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const comment = String(req.body?.comment || '').trim();
+  const id = sanitizeInput(String(req.params.id));
+  const comment = sanitizeInput(String(req.body?.comment || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
@@ -464,8 +665,8 @@ app.get('/terminado', async (req, res) => {
 });
 
 app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const comment = String(req.body?.completionComment || '').trim();
+  const id = sanitizeInput(String(req.params.id));
+  const comment = sanitizeInput(String(req.body?.completionComment || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.status === 'done');
@@ -496,15 +697,15 @@ app.get('/agendar', async (req, res) => {
 });
 
 app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const scheduledFor = String(req.body?.scheduledFor || '').trim();
+  const id = sanitizeInput(String(req.params.id));
+  const scheduledFor = sanitizeInput(String(req.body?.scheduledFor || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
   if (idx === -1) return res.redirect('/agendar');
 
   const current = db.items[idx];
-  const title = String(req.body?.title || current.title || current.input || '').trim();
+  const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
   db.items[idx] = updateItem(current, {
     title,
     scheduledFor: scheduledFor || null,
@@ -574,9 +775,9 @@ app.get('/delegar', async (req, res) => {
 });
 
 app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const delegatedFor = String(req.body?.delegatedFor || '').trim();
-  const delegatedTo = String(req.body?.delegatedTo || '').trim();
+  const id = sanitizeInput(String(req.params.id));
+  const delegatedFor = sanitizeInput(String(req.body?.delegatedFor || ''));
+  const delegatedTo = sanitizeInput(String(req.body?.delegatedTo || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
@@ -587,7 +788,7 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
   }
 
   const current = db.items[idx];
-  const title = String(req.body?.title || current.title || current.input || '').trim();
+  const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
   db.items[idx] = updateItem(current, {
     title,
     delegatedFor,
@@ -615,14 +816,14 @@ app.get('/desglosar', async (req, res) => {
 });
 
 app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
+  const id = sanitizeInput(String(req.params.id));
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
   if (idx === -1) return res.redirect('/desglosar');
 
   const current = withDesglosarMeta(db.items[idx]);
-  const title = String(req.body?.title || current.title || current.input || '').trim();
-  const objective = String(req.body?.objective || current.objective || '').trim();
+  const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+  const objective = sanitizeInput(String(req.body?.objective || current.objective || ''));
 
   db.items[idx] = updateItem(current, withDesglosarMeta(current, {
     title,
@@ -633,8 +834,8 @@ app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
 });
 
 app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const text = String(req.body?.subtask || '').trim();
+  const id = sanitizeInput(String(req.params.id));
+  const text = sanitizeInput(String(req.body?.subtask || ''));
   if (!text) return res.redirect('/desglosar');
 
   const db = await loadReqDb(req);
@@ -709,6 +910,129 @@ app.post('/items/:id/delete', requireApiKey, async (req, res) => {
   db.items = (db.items || []).filter(i => i.id !== id);
   await saveReqDb(req, db);
   return res.redirect('back');
+});
+
+app.get('/api/tags', async (req, res) => {
+  const db = await loadReqDb(req);
+  const allTags = new Set();
+
+  (db.items || []).forEach(item => {
+    if (Array.isArray(item.tags)) {
+      item.tags.forEach(tag => allTags.add(tag));
+    }
+  });
+
+  return res.json({ tags: Array.from(allTags).sort() });
+});
+
+app.get('/search', async (req, res) => {
+  const query = sanitizeInput(String(req.query?.q || '').trim().toLowerCase());
+
+  if (!query) {
+    return renderPage(res, 'dashboard', {
+      title: 'Búsqueda',
+      cards: [],
+      needApiKey: Boolean(APP_API_KEY),
+    });
+  }
+
+  const db = await loadReqDb(req);
+  const allItems = db.items || [];
+
+  // Buscar en títulos, inputs y comentarios
+  const results = allItems.filter(item => {
+    const searchText = [
+      item.title,
+      item.input,
+      item.completionComment,
+      item.objective,
+      item.delegatedTo,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchText.includes(query);
+  });
+
+  // Agrupar por lista
+  const grouped = {};
+  results.forEach(item => {
+    const list = item.list || 'collect';
+    if (!grouped[list]) grouped[list] = [];
+    grouped[list].push(item);
+  });
+
+  return renderPage(res, 'search-results', {
+    title: `Búsqueda: ${query}`,
+    query,
+    results,
+    grouped,
+    resultCount: results.length,
+  });
+});
+
+app.get('/export', async (req, res) => {
+  return renderPage(res, 'export', {
+    title: 'Exportar/Importar Datos',
+    needApiKey: Boolean(APP_API_KEY),
+  });
+});
+
+app.get('/export/json', async (req, res) => {
+  const db = await loadReqDb(req);
+  const exportData = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items: db.items || [],
+  };
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', `attachment; filename="gtd_neto_export_${Date.now()}.json"`);
+  return res.send(JSON.stringify(exportData, null, 2));
+});
+
+app.get('/export/csv', async (req, res) => {
+  const db = await loadReqDb(req);
+  const items = db.items || [];
+
+  // Header CSV
+  const headers = ['id', 'title', 'list', 'status', 'urgency', 'importance', 'scheduledFor', 'delegatedTo', 'createdAt', 'completedAt'];
+  let csv = headers.join(',') + '\n';
+
+  // Rows
+  items.forEach(item => {
+    const row = headers.map(h => {
+      const value = item[h] || '';
+      // Escapar comas y quotes
+      return `"${String(value).replace(/"/g, '""')}"`;
+    });
+    csv += row.join(',') + '\n';
+  });
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="gtd_neto_export_${Date.now()}.csv"`);
+  return res.send(csv);
+});
+
+app.post('/import', requireApiKey, express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const importData = req.body;
+
+    if (!importData || !Array.isArray(importData.items)) {
+      return res.status(400).json({ ok: false, error: 'Invalid import data format' });
+    }
+
+    const db = await loadReqDb(req);
+
+    // Merge: agregar items nuevos, no sobrescribir existentes
+    const existingIds = new Set((db.items || []).map(i => i.id));
+    const newItems = importData.items.filter(i => !existingIds.has(i.id));
+
+    db.items = [...(db.items || []), ...newItems];
+    await saveReqDb(req, db);
+
+    return res.json({ ok: true, imported: newItems.length });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.get('/healthz', (req, res) => res.type('text').send('ok'));

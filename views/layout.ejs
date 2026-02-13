@@ -3,41 +3,91 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Aplicación GTD simplificada para gestión de productividad" />
+  <meta name="theme-color" content="#2563eb" />
   <title><%= title %></title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/public/css/styles.css" />
+  <link rel="manifest" href="/public/manifest.json" />
+  <link rel="apple-touch-icon" href="/public/icon-192.png" />
+  <script src="/public/js/theme.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-900">
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-semibold">GTD_Neto</h1>
-        <p class="text-sm text-slate-600">Dashboard general + flujo Collect -> Destino</p>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+  <div class="max-w-6xl mx-auto p-4 md:p-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div>
+          <h1 class="text-xl md:text-2xl font-semibold dark:text-slate-100">GTD_Neto</h1>
+          <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400">Dashboard general + flujo Collect -> Destino</p>
+        </div>
+        <button
+          onclick="window.shortcutManager?.showHelp()"
+          class="px-2 py-1 text-xs rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+          title="Atajos de teclado"
+        >
+          ⌨️ ?
+        </button>
       </div>
-      <nav class="text-sm flex flex-wrap gap-2 items-center">
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/">Dashboard</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/collect">Collect</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/hacer">Hacer</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/agendar">Agendar</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/delegar">Delegar</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/desglosar">Desglosar</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/no-hacer">No hacer</a>
-        <a class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100" href="/terminado">Terminado</a>
+      <nav class="text-xs md:text-sm flex flex-wrap gap-1.5 md:gap-2 items-center">
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/">📊 <span class="hidden sm:inline">Dashboard</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/search" title="Búsqueda global">🔍 <span class="hidden md:inline">Buscar</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/stats" title="Estadísticas">📊 <span class="hidden md:inline">Stats</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/collect">📥 <span class="hidden sm:inline">Collect</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/hacer">✅ <span class="hidden sm:inline">Hacer</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/agendar">📅 <span class="hidden sm:inline">Agendar</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/delegar">🤝 <span class="hidden sm:inline">Delegar</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/desglosar">🔨 <span class="hidden sm:inline">Desglosar</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/no-hacer">🚫 <span class="hidden sm:inline">No hacer</span></a>
+        <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/terminado">🎉 <span class="hidden sm:inline">Terminado</span></a>
         <% if (useSupabase && authUser) { %>
-          <span class="text-xs text-slate-500"><%= authUser.email %></span>
+          <span class="text-xs text-slate-500 dark:text-slate-400 hidden md:inline">👤 <%= authUser.email %></span>
           <form method="POST" action="/auth/logout">
-            <button class="px-3 py-1 rounded-lg bg-white border hover:bg-slate-100">Salir</button>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">🚪 <span class="hidden sm:inline">Salir</span></button>
           </form>
         <% } %>
       </nav>
     </div>
 
     <% if (flash?.error) { %>
-      <div class="mt-4 p-3 rounded-lg bg-red-50 text-red-800 text-sm border border-red-200"><%= flash.error %></div>
+      <div class="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-sm border border-red-200 dark:border-red-800"><%= flash.error %></div>
     <% } %>
 
     <main class="mt-6">
       <%- body %>
     </main>
   </div>
+
+  <!-- Scripts comunes -->
+  <script src="/public/js/toast.js"></script>
+  <script src="/public/js/utils.js"></script>
+  <script src="/public/js/tags.js"></script>
+  <script src="/public/js/shortcuts.js"></script>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+          console.log('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+
+  <!-- Flash message to toast conversion -->
+  <% if (flash?.error) { %>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        toast.error('<%= flash.error %>');
+      });
+    </script>
+  <% } %>
+  <% if (flash?.success) { %>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        toast.success('<%= flash.success %>');
+      });
+    </script>
+  <% } %>
 </body>
 </html>

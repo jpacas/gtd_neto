@@ -1,0 +1,87 @@
+<div class="mb-4">
+  <h2 class="text-lg font-semibold dark:text-slate-100">🔍 Resultados de búsqueda</h2>
+  <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+    <% if (query) { %>
+      Mostrando <%= resultCount %> resultado<%= resultCount !== 1 ? 's' : '' %> para "<strong><%= query %></strong>"
+    <% } else { %>
+      Ingresa un término para buscar
+    <% } %>
+  </p>
+</div>
+
+<!-- Barra de búsqueda -->
+<form method="GET" action="/search" class="mb-6">
+  <div class="relative">
+    <input
+      type="text"
+      name="q"
+      value="<%= query || '' %>"
+      placeholder="Buscar en todas las listas..."
+      class="w-full border dark:border-slate-700 dark:bg-slate-800 rounded-lg px-4 py-3 pl-10 text-sm focus:ring-2 focus:ring-blue-500"
+      autofocus
+    />
+    <span class="absolute left-3 top-3 text-slate-400">🔍</span>
+  </div>
+</form>
+
+<% if (!query) { %>
+  <div class="bg-slate-100 dark:bg-slate-800 rounded-xl p-6 text-center">
+    <p class="text-slate-600 dark:text-slate-400">Usa la búsqueda para encontrar items en todas tus listas</p>
+  </div>
+<% } else if (resultCount === 0) { %>
+  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 text-center">
+    <p class="text-amber-800 dark:text-amber-200">No se encontraron resultados para "<%= query %>"</p>
+    <p class="text-xs text-amber-700 dark:text-amber-300 mt-2">Intenta con otros términos</p>
+  </div>
+<% } else { %>
+  <!-- Resultados agrupados por lista -->
+  <div class="space-y-6">
+    <%
+    const listLabels = {
+      'collect': { label: '📥 Collect', href: '/collect' },
+      'hacer': { label: '✅ Hacer', href: '/hacer' },
+      'agendar': { label: '📅 Agendar', href: '/agendar' },
+      'delegar': { label: '🤝 Delegar', href: '/delegar' },
+      'desglosar': { label: '🔨 Desglosar', href: '/desglosar' },
+      'no-hacer': { label: '🚫 No hacer', href: '/no-hacer' },
+    };
+
+    Object.keys(grouped).forEach(listKey => {
+      const items = grouped[listKey];
+      const listInfo = listLabels[listKey] || { label: listKey, href: `/${listKey}` };
+    %>
+      <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl overflow-hidden">
+        <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-700 flex items-center justify-between">
+          <h3 class="text-sm font-semibold"><%= listInfo.label %></h3>
+          <a href="<%= listInfo.href %>" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Ver todos →</a>
+        </div>
+        <div class="divide-y dark:divide-slate-700">
+          <% items.slice(0, 5).forEach(item => { %>
+            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm truncate"><%= item.title || item.input %></p>
+                  <% if (item.status === 'done') { %>
+                    <span class="text-xs text-emerald-600 dark:text-emerald-400">✓ Completado</span>
+                  <% } %>
+                  <% if (item.scheduledFor) { %>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">📅 <%= item.scheduledFor %></span>
+                  <% } %>
+                  <% if (item.delegatedTo) { %>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">👤 <%= item.delegatedTo %></span>
+                  <% } %>
+                </div>
+                <a href="<%= listInfo.href %>" class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Ver</a>
+              </div>
+            </div>
+          <% }); %>
+          <% if (items.length > 5) { %>
+            <div class="px-4 py-2 text-xs text-center text-slate-500 dark:text-slate-400">
+              y <%= items.length - 5 %> más en <a href="<%= listInfo.href %>" class="text-blue-600 dark:text-blue-400 hover:underline"><%= listInfo.label %></a>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
