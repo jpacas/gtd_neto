@@ -10,7 +10,6 @@
     <div class="bg-white border rounded-xl p-4">
       <form method="POST" action="/desglosar/<%= it.id %>/update" class="space-y-2">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
 
         <div>
           <label class="text-xs text-slate-500">Proyecto (desde Collect)</label>
@@ -30,7 +29,6 @@
 
         <form method="POST" action="/desglosar/<%= it.id %>/subtasks/add" class="flex gap-2 items-center mb-2">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input type="text" name="subtask" class="flex-1 border rounded-lg px-2.5 py-2 text-sm" placeholder="Ej: Definir 3 entregables" />
           <button class="text-sm px-3 py-2 rounded-lg border bg-white hover:bg-slate-50">Agregar</button>
         </form>
@@ -44,7 +42,6 @@
               <% } else { %>
                 <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/send" class="flex gap-1 items-center">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                  <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
                   <% for (const d of destinations) { %>
                     <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50">A <%= d.label %></button>
                   <% } %>

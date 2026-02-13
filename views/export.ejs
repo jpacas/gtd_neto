@@ -51,6 +51,17 @@
           class="block w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-200 hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
         />
       </div>
+      <% if (needApiKey) { %>
+        <div>
+          <label class="block text-sm font-medium mb-2 dark:text-slate-100">API key (solo para importación por header)</label>
+          <input
+            type="password"
+            id="importApiKey"
+            class="block w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
+            placeholder="Ingresa tu API key"
+          />
+        </div>
+      <% } %>
 
       <button
         id="importBtn"
@@ -76,10 +87,12 @@
   </a>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   const fileInput = document.getElementById('importFile');
+  const apiKeyInput = document.getElementById('importApiKey');
   const importBtn = document.getElementById('importBtn');
   const resultDiv = document.getElementById('importResult');
+  const csrfToken = '<%= csrfToken %>';
 
   fileInput.addEventListener('change', (e) => {
     importBtn.disabled = !e.target.files.length;
@@ -100,7 +113,8 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': '<%= needApiKey ? "" : "" %>', // API key si es necesario
+          'x-csrf-token': csrfToken,
+          ...(apiKeyInput?.value ? { 'x-api-key': apiKeyInput.value } : {}),
         },
         body: JSON.stringify(data),
       });
@@ -109,7 +123,7 @@
 
       if (result.ok) {
         resultDiv.className = 'mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-800 dark:text-emerald-200';
-        resultDiv.innerHTML = `<strong>✓ Importación exitosa!</strong><br>Se importaron ${result.imported} items nuevos.`;
+        resultDiv.textContent = `✓ Importación exitosa. Se importaron ${Number(result.imported || 0)} items nuevos.`;
         toast.success(`${result.imported} items importados correctamente`);
 
         setTimeout(() => {
@@ -120,12 +134,13 @@
       }
     } catch (err) {
       resultDiv.className = 'mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-800 dark:text-red-200';
-      resultDiv.innerHTML = `<strong>✕ Error:</strong> ${err.message}`;
+      resultDiv.textContent = `✕ Error: ${String(err?.message || 'Error desconocido')}`;
       toast.error('Error al importar datos');
     } finally {
       resultDiv.classList.remove('hidden');
       LoadingManager.hide(importBtn);
       fileInput.value = '';
+      if (apiKeyInput) apiKeyInput.value = '';
       importBtn.disabled = true;
     }
   });

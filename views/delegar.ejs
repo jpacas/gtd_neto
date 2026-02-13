@@ -38,7 +38,6 @@
           <div class="flex items-center gap-2">
             <form method="POST" action="/delegar/<%= it.id %>/update" class="delegar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
               <input type="hidden" name="title" value="<%= it.title || it.input %>" />
               <input type="hidden" name="delegatedTo" value="<%= it.delegatedTo || '' %>" />
               <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
@@ -46,7 +45,6 @@
 
             <form method="POST" action="/delegar/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 delegar-edit-form" data-id="<%= it.id %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
               <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1.5 text-sm" />
               <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-44 border rounded-md px-2 py-1.5 text-sm" required />
               <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="border rounded-md px-2 py-1.5 text-sm" required />
@@ -70,7 +68,7 @@
   <% } %>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     document.querySelectorAll('.edit-toggle').forEach((btn) => {
       btn.addEventListener('click', () => {

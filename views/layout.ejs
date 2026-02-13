@@ -9,9 +9,12 @@
   <link rel="stylesheet" href="/public/css/styles.css" />
   <link rel="manifest" href="/public/manifest.json" />
   <link rel="apple-touch-icon" href="/public/icon-192.png" />
-  <script src="/public/js/theme.js"></script>
+  <script nonce="<%= cspNonce %>" src="/public/js/theme.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-slate-900 focus:px-3 focus:py-2 focus:rounded">
+    Saltar al contenido principal
+  </a>
   <div class="max-w-6xl mx-auto p-4 md:p-6">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -27,7 +30,7 @@
           ⌨️ ?
         </button>
       </div>
-      <nav class="text-xs md:text-sm flex flex-wrap gap-1.5 md:gap-2 items-center">
+      <nav class="text-xs md:text-sm flex flex-wrap gap-1.5 md:gap-2 items-center" aria-label="Navegación principal">
         <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/">📊 <span class="hidden sm:inline">Dashboard</span></a>
         <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/search" title="Búsqueda global">🔍 <span class="hidden md:inline">Buscar</span></a>
         <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/stats" title="Estadísticas">📊 <span class="hidden md:inline">Stats</span></a>
@@ -52,19 +55,19 @@
       <div class="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-sm border border-red-200 dark:border-red-800"><%= flash.error %></div>
     <% } %>
 
-    <main class="mt-6">
+    <main id="main-content" class="mt-6" tabindex="-1">
       <%- body %>
     </main>
   </div>
 
   <!-- Scripts comunes -->
-  <script src="/public/js/toast.js"></script>
-  <script src="/public/js/utils.js"></script>
-  <script src="/public/js/tags.js"></script>
-  <script src="/public/js/shortcuts.js"></script>
+  <script nonce="<%= cspNonce %>" src="/public/js/toast.js"></script>
+  <script nonce="<%= cspNonce %>" src="/public/js/utils.js"></script>
+  <script nonce="<%= cspNonce %>" src="/public/js/tags.js"></script>
+  <script nonce="<%= cspNonce %>" src="/public/js/shortcuts.js"></script>
 
   <!-- PWA Service Worker -->
-  <script>
+  <script nonce="<%= cspNonce %>">
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(err => {
@@ -76,16 +79,16 @@
 
   <!-- Flash message to toast conversion -->
   <% if (flash?.error) { %>
-    <script>
+    <script nonce="<%= cspNonce %>">
       document.addEventListener('DOMContentLoaded', () => {
-        toast.error('<%= flash.error %>');
+        toast.error(<%- JSON.stringify(String(flash.error || '')) %>);
       });
     </script>
   <% } %>
   <% if (flash?.success) { %>
-    <script>
+    <script nonce="<%= cspNonce %>">
       document.addEventListener('DOMContentLoaded', () => {
-        toast.success('<%= flash.success %>');
+        toast.success(<%- JSON.stringify(String(flash.success || '')) %>);
       });
     </script>
   <% } %>

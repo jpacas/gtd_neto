@@ -19,7 +19,7 @@
     <button type="submit" id="loginBtn" class="w-full rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors">Entrar</button>
   </form>
 
-  <script>
+  <script nonce="<%= cspNonce %>">
     document.getElementById('loginForm')?.addEventListener('submit', function(e) {
       const btn = document.getElementById('loginBtn');
       LoadingManager.show(btn);

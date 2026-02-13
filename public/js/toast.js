@@ -38,13 +38,24 @@ class ToastManager {
       info: 'ℹ',
     };
 
-    toast.innerHTML = `
-      <div class="${colors[type] || colors.info} px-4 py-3 rounded-lg border shadow-lg flex items-center gap-2 min-w-[300px] max-w-md">
-        <span class="text-lg font-semibold">${icons[type] || icons.info}</span>
-        <span class="text-sm flex-1">${message}</span>
-        <button class="toast-close text-lg hover:opacity-70" aria-label="Cerrar">×</button>
-      </div>
-    `;
+    const wrap = document.createElement('div');
+    wrap.className = `${colors[type] || colors.info} px-4 py-3 rounded-lg border shadow-lg flex items-center gap-2 min-w-[300px] max-w-md`;
+
+    const icon = document.createElement('span');
+    icon.className = 'text-lg font-semibold';
+    icon.textContent = icons[type] || icons.info;
+
+    const text = document.createElement('span');
+    text.className = 'text-sm flex-1';
+    text.textContent = String(message || '');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close text-lg hover:opacity-70';
+    closeBtn.setAttribute('aria-label', 'Cerrar');
+    closeBtn.textContent = '×';
+
+    wrap.append(icon, text, closeBtn);
+    toast.appendChild(wrap);
 
     this.container.appendChild(toast);
 
@@ -56,7 +67,6 @@ class ToastManager {
     });
 
     // Botón cerrar
-    const closeBtn = toast.querySelector('.toast-close');
     closeBtn.addEventListener('click', () => this.hide(toast));
 
     // Auto-hide

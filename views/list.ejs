@@ -47,13 +47,11 @@
         <div class="flex flex-col gap-2 shrink-0">
           <% if (it.status === 'unprocessed') { %>
             <form method="POST" action="/inbox/<%= it.id %>/process">
-              <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
               <button class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Procesar</button>
             </form>
           <% } %>
 
           <form method="POST" action="/items/<%= it.id %>/move" class="flex gap-2">
-            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
             <select name="list" class="text-sm border rounded-lg px-2 py-1">
               <% for (const opt of lists) { %>
                 <option value="<%= opt %>" <%= it.list === opt ? 'selected' : '' %>><%= opt %></option>
@@ -63,12 +61,10 @@
           </form>
 
           <form method="POST" action="/items/<%= it.id %>/done">
-            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
             <button class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Done</button>
           </form>
 
           <form method="POST" action="/items/<%= it.id %>/delete" onsubmit="return confirm('¿Borrar?');">
-            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
             <button class="text-sm px-3 py-1 rounded-lg bg-white border text-red-700 hover:bg-red-50">Borrar</button>
           </form>
         </div>

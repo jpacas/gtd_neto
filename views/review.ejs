@@ -35,7 +35,6 @@
         <div class="font-medium"><%= p.title || p.input %></div>
         <form class="mt-2 flex gap-2" method="POST" action="/projects/<%= p.id %>/create-next">
           <input class="flex-1 border rounded-lg px-2 py-1 text-sm" type="text" name="step" placeholder="Ej: Llamar a proveedor y confirmar propuesta" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <button class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Crear Next</button>
         </form>
       </div>

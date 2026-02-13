@@ -8,7 +8,24 @@ import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import sanitizeHtml from 'sanitize-html';
 
-import { loadDb, saveDb, newItem, updateItem } from './lib/store.js';
+import { loadDb, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem } from './lib/store.js';
+import {
+  DESTINATIONS,
+  destinationByKey,
+  evaluateActionability,
+  withHacerMeta,
+  randomId,
+  withDesglosarMeta,
+} from './src/services/gtd-service.js';
+import { ImportValidationError, validateAndNormalizeImportPayload } from './src/validators/import-payload.js';
+import {
+  RequestValidationError,
+  sanitizeEnumField,
+  sanitizeIdParam,
+  sanitizeIntegerField,
+  sanitizeTextField,
+} from './src/validators/request-validators.js';
+import { createObservabilityMiddleware } from './src/middleware/observability.js';
 
 const app = express();
 
@@ -18,6 +35,17 @@ const APP_API_KEY = process.env.APP_API_KEY || '';
 const USE_SUPABASE = String(process.env.USE_SUPABASE || '').toLowerCase() === 'true';
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '64kb';
+const IMPORT_JSON_BODY_LIMIT = process.env.IMPORT_JSON_BODY_LIMIT || '10mb';
+const AUTH_COOKIE_MAX_AGE_MS = Number(process.env.AUTH_COOKIE_MAX_AGE_MS || 7 * 24 * 60 * 60 * 1000);
+const CSRF_COOKIE_MAX_AGE_MS = Number(process.env.CSRF_COOKIE_MAX_AGE_MS || 24 * 60 * 60 * 1000);
+
+if (IS_PRODUCTION && !USE_SUPABASE && !APP_API_KEY) {
+  throw new Error(
+    '[gtd_neto] Fatal: insecure production configuration. Set APP_API_KEY or enable USE_SUPABASE=true before startup.'
+  );
+}
 
 if (!APP_API_KEY) {
   console.warn('[gtd_neto] WARNING: APP_API_KEY is empty. Set it in .env to protect POST endpoints.');
@@ -30,6 +58,51 @@ if (USE_SUPABASE && (!SUPABASE_URL || !SUPABASE_ANON_KEY)) {
 const supabaseAuth = (SUPABASE_URL && SUPABASE_ANON_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
+const {
+  cspNonceMiddleware,
+  requestIdMiddleware,
+  metricsHandler,
+  notFoundHandler,
+  errorHandler,
+} = createObservabilityMiddleware({ isProduction: IS_PRODUCTION });
+
+function authCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: IS_PRODUCTION,
+    path: '/',
+    maxAge: AUTH_COOKIE_MAX_AGE_MS,
+  };
+}
+
+function clearAuthCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: IS_PRODUCTION,
+    path: '/',
+  };
+}
+
+function csrfCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: IS_PRODUCTION,
+    path: '/',
+    maxAge: CSRF_COOKIE_MAX_AGE_MS,
+  };
+}
+
+function clearCsrfCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: IS_PRODUCTION,
+    path: '/',
+  };
+}
 
 // Función de sanitización para prevenir XSS
 function sanitizeInput(input) {
@@ -53,9 +126,11 @@ function csrfProtection(req, res, next) {
 
   // Verificar token CSRF
   const tokenFromBody = req.body?._csrf;
+  const tokenFromHeader = req.get('x-csrf-token');
+  const tokenFromRequest = tokenFromBody || tokenFromHeader;
   const tokenFromSession = req.cookies?.csrf_token;
 
-  if (!tokenFromBody || !tokenFromSession || tokenFromBody !== tokenFromSession) {
+  if (!tokenFromRequest || !tokenFromSession || tokenFromRequest !== tokenFromSession) {
     return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
   }
 
@@ -66,14 +141,7 @@ function attachCsrfToken(req, res, next) {
   // Generar token si no existe
   if (!req.cookies?.csrf_token) {
     const token = generateCsrfToken();
-    const isSecure = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
-    res.cookie('csrf_token', token, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: isSecure,
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    });
+    res.cookie('csrf_token', token, csrfCookieOptions());
     res.locals.csrfToken = token;
   } else {
     res.locals.csrfToken = req.cookies.csrf_token;
@@ -82,15 +150,21 @@ function attachCsrfToken(req, res, next) {
 }
 
 // Middlewares de seguridad y performance
+if (IS_PRODUCTION) {
+  app.set('trust proxy', 1);
+}
+app.disable('x-powered-by');
 app.use(compression()); // Comprimir respuestas
+app.use(cspNonceMiddleware);
+app.use(requestIdMiddleware);
 
 // Helmet para security headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline necesario para scripts inline en templates
-      styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline necesario para estilos inline
+      scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+      styleSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "data:"],
@@ -105,7 +179,7 @@ app.use(helmet({
 // Rate limiting general
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 requests por ventana
+  max: 1000, // Límite de 1000 requests por ventana
   message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -125,7 +199,14 @@ app.use(generalLimiter);
 app.set('view engine', 'ejs');
 app.set('views', new URL('./views', import.meta.url).pathname);
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
-app.use(express.json({ limit: '64kb' })); // Para requests JSON
+const jsonParser = express.json({ limit: JSON_BODY_LIMIT });
+const importJsonParser = express.json({ limit: IMPORT_JSON_BODY_LIMIT });
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/import') {
+    return importJsonParser(req, res, next);
+  }
+  return jsonParser(req, res, next);
+});
 app.use(cookieParser());
 app.use('/public', express.static(new URL('./public', import.meta.url).pathname));
 app.use('/docs', express.static(new URL('./docs', import.meta.url).pathname));
@@ -142,11 +223,12 @@ app.get('/sw.js', (req, res) => {
 });
 
 function extractApiKey(req) {
-  return req.get('x-api-key') || req.body?.apiKey || req.query?.apiKey || '';
+  return req.get('x-api-key') || '';
 }
 
 function requireApiKey(req, res, next) {
   if (!APP_API_KEY) return next();
+  if (USE_SUPABASE && req.auth?.user) return next();
   const key = extractApiKey(req);
   if (key && key === APP_API_KEY) return next();
   return res.status(401).send('Unauthorized');
@@ -162,6 +244,28 @@ async function loadReqDb(req) {
 
 async function saveReqDb(req, db) {
   return saveDb(db, { owner: ownerForReq(req) });
+}
+
+async function saveReqItem(req, item, dbWhenLocal = null) {
+  if (isStoreSupabaseMode()) {
+    return saveItem(item, { owner: ownerForReq(req) });
+  }
+  if (dbWhenLocal) return saveReqDb(req, dbWhenLocal);
+  const db = await loadReqDb(req);
+  const idx = (db.items || []).findIndex(i => i.id === item.id);
+  if (idx === -1) db.items = [item, ...(db.items || [])];
+  else db.items[idx] = item;
+  return saveReqDb(req, db);
+}
+
+async function deleteReqItem(req, id, dbWhenLocal = null) {
+  if (isStoreSupabaseMode()) {
+    return deleteItemById(id, { owner: ownerForReq(req) });
+  }
+  if (dbWhenLocal) return saveReqDb(req, dbWhenLocal);
+  const db = await loadReqDb(req);
+  db.items = (db.items || []).filter(i => i.id !== id);
+  return saveReqDb(req, db);
 }
 
 async function attachAuth(req, res, next) {
@@ -192,7 +296,8 @@ function renderPage(res, view, data) {
   const title = data?.title || 'GTD_Neto';
   const flash = data?.flash || null;
   const csrfToken = res.locals?.csrfToken || '';
-  const body = ejs.renderFile(`${viewsPath}/${view}.ejs`, { ...data, csrfToken });
+  const cspNonce = res.locals?.cspNonce || '';
+  const body = ejs.renderFile(`${viewsPath}/${view}.ejs`, { ...data, csrfToken, cspNonce });
   return Promise.resolve(body).then(html =>
     res.render('layout', {
       title,
@@ -201,6 +306,7 @@ function renderPage(res, view, data) {
       useSupabase: USE_SUPABASE,
       authUser: data?.authUser || res.locals?.authUser || null,
       csrfToken,
+      cspNonce,
     })
   );
 }
@@ -219,7 +325,6 @@ app.get('/login', async (req, res) => {
   return renderPage(res, 'login', {
     title: 'Login',
     needApiKey: false,
-    apiKey: '',
     message: String(req.query?.message || ''),
   });
 });
@@ -227,7 +332,7 @@ app.get('/login', async (req, res) => {
 app.get('/signup', async (req, res) => {
   if (!USE_SUPABASE) return res.redirect('/');
   if (req.auth?.user) return res.redirect('/');
-  return renderPage(res, 'signup', { title: 'Registro', needApiKey: false, apiKey: '' });
+  return renderPage(res, 'signup', { title: 'Registro', needApiKey: false });
 });
 
 app.post('/auth/login', authLimiter, async (req, res) => {
@@ -242,13 +347,11 @@ app.post('/auth/login', authLimiter, async (req, res) => {
       title: 'Login',
       flash: { error: 'Credenciales inválidas.' },
       needApiKey: false,
-      apiKey: '',
     });
   }
 
-  const isSecure = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
-  res.cookie('sb_access_token', data.session.access_token, { httpOnly: true, sameSite: 'lax', secure: isSecure, path: '/' });
-  res.cookie('sb_refresh_token', data.session.refresh_token, { httpOnly: true, sameSite: 'lax', secure: isSecure, path: '/' });
+  res.cookie('sb_access_token', data.session.access_token, authCookieOptions());
+  res.cookie('sb_refresh_token', data.session.refresh_token, authCookieOptions());
   return res.redirect('/');
 });
 
@@ -264,7 +367,6 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
       title: 'Registro',
       flash: { error: error.message || 'No se pudo crear la cuenta.' },
       needApiKey: false,
-      apiKey: '',
     });
   }
 
@@ -283,116 +385,40 @@ app.post('/auth/forgot', authLimiter, async (req, res) => {
 });
 
 app.post('/auth/logout', (req, res) => {
-  res.clearCookie('sb_access_token', { path: '/' });
-  res.clearCookie('sb_refresh_token', { path: '/' });
+  res.clearCookie('sb_access_token', clearAuthCookieOptions());
+  res.clearCookie('sb_refresh_token', clearAuthCookieOptions());
+  res.clearCookie('csrf_token', clearCsrfCookieOptions());
   return res.redirect('/login');
 });
 
 app.use((req, res, next) => {
-  const publicPaths = ['/login', '/signup', '/auth/login', '/auth/signup', '/auth/forgot', '/auth/logout', '/healthz', '/favicon.ico', '/favicon.png'];
+  const publicPaths = ['/login', '/signup', '/auth/login', '/auth/signup', '/auth/forgot', '/auth/logout', '/healthz', '/metricsz', '/favicon.ico', '/favicon.png'];
   if (publicPaths.includes(req.path) || req.path.startsWith('/docs/')) return next();
   return requireAuth(req, res, next);
 });
 
-const DESTINATIONS = [
-  { key: 'hacer', label: 'Hacer', hint: 'Acciones <10 min, claras y priorizadas' },
-  { key: 'agendar', label: 'Agendar', hint: 'Acciones con fecha/agenda' },
-  { key: 'delegar', label: 'Delegar', hint: 'Pendientes de terceros' },
-  { key: 'desglosar', label: 'Desglosar', hint: 'Items para dividir en pasos' },
-  { key: 'no-hacer', label: 'No hacer', hint: 'Descartar o archivar' },
-];
-
-function destinationByKey(key) {
-  return DESTINATIONS.find(d => d.key === key) || null;
-}
-
-function evaluateActionability(text) {
-  const t = String(text || '').trim();
-  const words = t.split(/\s+/).filter(Boolean);
-  const first = (words[0] || '').toLowerCase();
-  const vague = ['hacer', 'ver', 'revisar tema', 'pendiente', 'trabajar', 'organizar'];
-
-  const startsWithInfinitive = /[aá]r$|er$|ir$/.test(first);
-  const hasEnoughWords = words.length >= 2;
-  const tooLong = t.length > 140;
-  const hasVaguePattern = vague.some(v => t.toLowerCase() === v || t.toLowerCase().startsWith(v + ' '));
-
-  let score = 0;
-  if (startsWithInfinitive) score += 40;
-  if (hasEnoughWords) score += 30;
-  if (!tooLong) score += 20;
-  if (!hasVaguePattern) score += 10;
-
-  const feedback = [];
-  if (!startsWithInfinitive) feedback.push('Empieza con un verbo en infinitivo (Ej: Llamar, Enviar, Definir).');
-  if (!hasEnoughWords) feedback.push('Hazla más específica (mínimo 2 palabras).');
-  if (tooLong) feedback.push('Hazla más corta y concreta (ideal <= 140 caracteres).');
-  if (hasVaguePattern) feedback.push('Evita frases vagas; especifica el resultado.');
-
-  return {
-    actionableScore: score,
-    actionableOk: score >= 70,
-    actionableFeedback: feedback.join(' '),
-  };
-}
-
-function withHacerMeta(item, patch = {}) {
-  const urgency = Number(patch.urgency ?? item.urgency ?? 3);
-  const importance = Number(patch.importance ?? item.importance ?? 3);
-  const estimateMinRaw = Number(patch.estimateMin ?? item.estimateMin ?? 10);
-  const estimateMin = Math.min(10, Math.max(1, estimateMinRaw));
-
-  const title = String(patch.title ?? item.title ?? item.input ?? '').trim();
-  const qa = evaluateActionability(title);
-  const priorityScore = urgency * importance;
-
-  // Validar si la tarea debería ir a Desglosar por duración
-  let durationWarning = null;
-  if (estimateMinRaw > 10) {
-    durationWarning = `Esta tarea requiere más de 10 minutos (${estimateMinRaw} min). Considera moverla a Desglosar para dividirla en pasos más pequeños.`;
-  }
-
-  return {
-    ...patch,
-    title,
-    urgency,
-    importance,
-    estimateMin,
-    priorityScore,
-    durationWarning,
-    ...qa,
-  };
-}
-
-function randomId() {
-  const bytes = crypto.getRandomValues(new Uint8Array(8));
-  return Buffer.from(bytes).toString('hex');
-}
-
-function withDesglosarMeta(item, patch = {}) {
-  const objective = String(patch.objective ?? item.objective ?? '').trim();
-  const subtasks = Array.isArray(patch.subtasks ?? item.subtasks)
-    ? (patch.subtasks ?? item.subtasks)
-    : [];
-
-  return {
-    ...patch,
-    objective,
-    subtasks,
-  };
-}
-
 app.get('/', async (req, res) => {
   const db = await loadReqDb(req);
   const items = db.items || [];
+  const activeByList = new Map();
+  let doneCount = 0;
+  let collectCount = 0;
 
-  const collectCount = items.filter(i => i.list === 'collect' && i.status !== 'done').length;
-  const doneCount = items.filter(i => i.status === 'done').length;
+  for (const item of items) {
+    if (item.status === 'done') {
+      doneCount += 1;
+      continue;
+    }
+    const key = String(item.list || 'collect');
+    activeByList.set(key, (activeByList.get(key) || 0) + 1);
+    if (key === 'collect') collectCount += 1;
+  }
+
   const cards = [
     { label: 'Collect', count: collectCount, href: '/collect', hint: 'Captura rápida' },
     ...DESTINATIONS.map(d => ({
       label: d.label,
-      count: items.filter(i => i.list === d.key && i.status !== 'done').length,
+      count: activeByList.get(d.key) || 0,
       href: `/${d.key}`,
       hint: d.hint,
     })),
@@ -417,24 +443,48 @@ app.get('/stats', async (req, res) => {
   const monthStart = new Date(todayStart);
   monthStart.setDate(monthStart.getDate() - 30);
 
-  const completedItems = items.filter(i => i.status === 'done' && i.completedAt);
+  const byList = {
+    collect: 0,
+  };
+  DESTINATIONS.forEach(d => { byList[d.key] = 0; });
 
-  // Stats básicas
+  const completedPerDay = new Map();
+  let activeCount = 0;
+  let completedCount = 0;
+  let completedToday = 0;
+  let completedWeek = 0;
+  let completedMonth = 0;
+
+  for (const item of items) {
+    if (item.status === 'done' && item.completedAt) {
+      completedCount += 1;
+      const completedDate = new Date(item.completedAt);
+      if (!Number.isNaN(completedDate.getTime())) {
+        if (completedDate >= todayStart) completedToday += 1;
+        if (completedDate >= weekStart) completedWeek += 1;
+        if (completedDate >= monthStart) completedMonth += 1;
+
+        const dayKey = completedDate.toISOString().slice(0, 10);
+        completedPerDay.set(dayKey, (completedPerDay.get(dayKey) || 0) + 1);
+      }
+      continue;
+    }
+
+    activeCount += 1;
+    const list = String(item.list || 'collect');
+    if (Object.prototype.hasOwnProperty.call(byList, list)) {
+      byList[list] += 1;
+    }
+  }
+
   const stats = {
     total: items.length,
-    active: items.filter(i => i.status !== 'done').length,
-    completed: completedItems.length,
-    completedToday: completedItems.filter(i => new Date(i.completedAt) >= todayStart).length,
-    completedWeek: completedItems.filter(i => new Date(i.completedAt) >= weekStart).length,
-    completedMonth: completedItems.filter(i => new Date(i.completedAt) >= monthStart).length,
+    active: activeCount,
+    completed: completedCount,
+    completedToday,
+    completedWeek,
+    completedMonth,
   };
-
-  // Items por lista
-  const byList = {};
-  DESTINATIONS.forEach(d => {
-    byList[d.key] = items.filter(i => i.list === d.key && i.status !== 'done').length;
-  });
-  byList.collect = items.filter(i => i.list === 'collect' && i.status !== 'done').length;
 
   // Últimos 7 días de actividad
   const last7Days = [];
@@ -444,10 +494,8 @@ app.get('/stats', async (req, res) => {
     const nextDate = new Date(date);
     nextDate.setDate(nextDate.getDate() + 1);
 
-    const count = completedItems.filter(item => {
-      const completedDate = new Date(item.completedAt);
-      return completedDate >= date && completedDate < nextDate;
-    }).length;
+    const dayKey = date.toISOString().slice(0, 10);
+    const count = completedPerDay.get(dayKey) || 0;
 
     last7Days.push({
       date: date.toLocaleDateString('es', { weekday: 'short', day: 'numeric' }),
@@ -479,20 +527,20 @@ app.get('/collect', async (req, res) => {
     items,
     destinations: DESTINATIONS,
     needApiKey: Boolean(APP_API_KEY),
-    apiKey: '',
   });
 });
 
 app.post('/collect/add', requireApiKey, async (req, res) => {
-  const input = sanitizeInput(String(req.body?.input || ''));
-  if (!input) {
-    if (String(req.get('accept') || '').includes('application/json')) {
-      return res.status(400).json({ ok: false, error: 'empty_input' });
+  try {
+    const input = sanitizeTextField(req.body?.input, sanitizeInput, { field: 'input', required: true, maxLen: 500 });
+    if (!input) {
+      if (String(req.get('accept') || '').includes('application/json')) {
+        return res.status(400).json({ ok: false, error: 'empty_input' });
+      }
+      return res.redirect('/collect');
     }
-    return res.redirect('/collect');
-  }
 
-  const db = await loadReqDb(req);
+    const db = await loadReqDb(req);
 
   // Guard anti-duplicados: evita doble inserción si llega el mismo texto casi al mismo tiempo
   const now = Date.now();
@@ -519,36 +567,51 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
   db.items = [item, ...(db.items || [])];
   await saveReqDb(req, db);
 
-  if (String(req.get('accept') || '').includes('application/json')) {
-    return res.json({ ok: true, item, deduped: false });
-  }
+    if (String(req.get('accept') || '').includes('application/json')) {
+      return res.json({ ok: true, item, deduped: false });
+    }
 
-  return res.redirect('/collect');
+    return res.redirect('/collect');
+  } catch (err) {
+    if (err instanceof RequestValidationError) {
+      if (String(req.get('accept') || '').includes('application/json')) {
+        return res.status(err.status || 400).json({ ok: false, error: err.message });
+      }
+      return res.redirect('/collect');
+    }
+    throw err;
+  }
 });
 
 app.post('/collect/:id/update', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const input = sanitizeInput(String(req.body?.input || ''));
-  if (!input) return res.redirect('/collect');
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const input = sanitizeTextField(req.body?.input, sanitizeInput, { field: 'input', required: true, maxLen: 500 });
+    if (!input) return res.redirect('/collect');
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'collect');
-  if (idx === -1) return res.redirect('/collect');
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'collect');
+    if (idx === -1) return res.redirect('/collect');
 
-  db.items[idx] = updateItem(db.items[idx], {
-    input,
-    title: input,
-  });
-  await saveReqDb(req, db);
-  return res.redirect('/collect');
+    db.items[idx] = updateItem(db.items[idx], {
+      input,
+      title: input,
+    });
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/collect');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/collect');
+    throw err;
+  }
 });
 
 app.post('/collect/:id/send', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const destination = sanitizeInput(String(req.body?.destination || ''));
-  if (!destinationByKey(destination)) return res.status(400).send('Bad destination');
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const destination = sanitizeEnumField(req.body?.destination, DESTINATIONS.map(d => d.key), sanitizeInput, 'destination');
+    if (!destinationByKey(destination)) return res.status(400).send('Bad destination');
 
-  const db = await loadReqDb(req);
+    const db = await loadReqDb(req);
   // Validación de owner implícita: loadReqDb solo carga items del usuario actual
   const idx = (db.items || []).findIndex(i => i.id === id);
   if (idx === -1) return res.redirect('/collect');
@@ -562,14 +625,19 @@ app.post('/collect/:id/send', requireApiKey, async (req, res) => {
   if (destination === 'hacer') patch = withHacerMeta(db.items[idx], basePatch);
   if (destination === 'desglosar') patch = withDesglosarMeta(db.items[idx], basePatch);
 
-  db.items[idx] = updateItem(db.items[idx], patch);
-  await saveReqDb(req, db);
-  return res.redirect('/collect');
+    db.items[idx] = updateItem(db.items[idx], patch);
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/collect');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.status(err.status || 400).send(err.message);
+    throw err;
+  }
 });
 
 app.post('/items/:id/tags', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const tagsInput = sanitizeInput(String(req.body?.tags || ''));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const tagsInput = sanitizeTextField(req.body?.tags, sanitizeInput, { field: 'tags', required: false, maxLen: 400 });
 
   // Parse tags: split por comas, trim, filtrar vacíos, lowercase
   const tags = tagsInput
@@ -584,10 +652,16 @@ app.post('/items/:id/tags', requireApiKey, async (req, res) => {
     return res.status(404).json({ ok: false, error: 'Item not found' });
   }
 
-  db.items[idx] = updateItem(db.items[idx], { tags });
-  await saveReqDb(req, db);
+    db.items[idx] = updateItem(db.items[idx], { tags });
+    await saveReqItem(req, db.items[idx], db);
 
-  return res.json({ ok: true, tags });
+    return res.json({ ok: true, tags });
+  } catch (err) {
+    if (err instanceof RequestValidationError) {
+      return res.status(err.status || 400).json({ ok: false, error: err.message });
+    }
+    throw err;
+  }
 });
 
 app.get('/hacer', async (req, res) => {
@@ -605,7 +679,6 @@ app.get('/hacer', async (req, res) => {
     title: 'Hacer',
     items,
     needApiKey: Boolean(APP_API_KEY),
-    apiKey: '',
   });
 });
 
@@ -615,22 +688,27 @@ app.post('/hacer/add', requireApiKey, async (req, res) => {
 });
 
 app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
-  if (idx === -1) return res.redirect('/hacer');
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
+    if (idx === -1) return res.redirect('/hacer');
 
-  const current = db.items[idx];
-  const patch = {
-    title: sanitizeInput(String(req.body?.title || current.title || current.input || '')),
-    urgency: Number(req.body?.urgency || current.urgency || 3),
-    importance: Number(req.body?.importance || current.importance || 3),
-    estimateMin: Number(req.body?.estimateMin || current.estimateMin || 10),
-  };
+    const current = db.items[idx];
+    const patch = {
+      title: sanitizeTextField(req.body?.title || current.title || current.input || '', sanitizeInput, { field: 'title', required: true, maxLen: 280 }),
+      urgency: sanitizeIntegerField(req.body?.urgency ?? current.urgency ?? 3, { field: 'urgency', min: 1, max: 5, fallback: 3 }),
+      importance: sanitizeIntegerField(req.body?.importance ?? current.importance ?? 3, { field: 'importance', min: 1, max: 5, fallback: 3 }),
+      estimateMin: sanitizeIntegerField(req.body?.estimateMin ?? current.estimateMin ?? 10, { field: 'estimateMin', min: 1, max: 600, fallback: 10 }),
+    };
 
-  db.items[idx] = updateItem(current, withHacerMeta(current, patch));
-  await saveReqDb(req, db);
-  return res.redirect('/hacer');
+    db.items[idx] = updateItem(current, withHacerMeta(current, patch));
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/hacer');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/hacer');
+    throw err;
+  }
 });
 
 app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
@@ -646,7 +724,7 @@ app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
     completedAt: new Date().toISOString(),
     completionComment: comment || null,
   });
-  await saveReqDb(req, db);
+  await saveReqItem(req, db.items[idx], db);
   return res.redirect('/hacer');
 });
 
@@ -660,7 +738,6 @@ app.get('/terminado', async (req, res) => {
     title: 'Terminado',
     items,
     needApiKey: Boolean(APP_API_KEY),
-    apiKey: '',
   });
 });
 
@@ -673,7 +750,7 @@ app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
   if (idx === -1) return res.redirect('/terminado');
 
   db.items[idx] = updateItem(db.items[idx], { completionComment: comment || null });
-  await saveReqDb(req, db);
+  await saveReqItem(req, db.items[idx], db);
   return res.redirect('/terminado');
 });
 
@@ -692,7 +769,6 @@ app.get('/agendar', async (req, res) => {
     title: 'Agendar',
     items,
     needApiKey: Boolean(APP_API_KEY),
-    apiKey: '',
   });
 });
 
@@ -711,7 +787,7 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
     scheduledFor: scheduledFor || null,
   });
 
-  await saveReqDb(req, db);
+  await saveReqItem(req, db.items[idx], db);
   return res.redirect('/agendar');
 });
 
@@ -726,7 +802,7 @@ app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
     completedAt: new Date().toISOString(),
     completionComment: null,
   });
-  await saveReqDb(req, db);
+  await saveReqItem(req, db.items[idx], db);
   return res.redirect('/agendar');
 });
 
@@ -770,33 +846,37 @@ app.get('/delegar', async (req, res) => {
     ownerFilter: String(req.query?.owner || ''),
     error,
     needApiKey: Boolean(APP_API_KEY),
-    apiKey: '',
   });
 });
 
 app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const delegatedFor = sanitizeInput(String(req.body?.delegatedFor || ''));
-  const delegatedTo = sanitizeInput(String(req.body?.delegatedTo || ''));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const delegatedFor = sanitizeTextField(req.body?.delegatedFor, sanitizeInput, { field: 'delegatedFor', required: true, maxLen: 40 });
+    const delegatedTo = sanitizeTextField(req.body?.delegatedTo, sanitizeInput, { field: 'delegatedTo', required: true, maxLen: 120 });
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
-  if (idx === -1) return res.redirect('/delegar?error=not_found');
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
+    if (idx === -1) return res.redirect('/delegar?error=not_found');
 
-  if (!delegatedFor || !delegatedTo) {
-    return res.redirect('/delegar?error=missing_fields');
+    if (!delegatedFor || !delegatedTo) {
+      return res.redirect('/delegar?error=missing_fields');
+    }
+
+    const current = db.items[idx];
+    const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+    db.items[idx] = updateItem(current, {
+      title,
+      delegatedFor,
+      delegatedTo,
+    });
+
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/delegar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/delegar?error=missing_fields');
+    throw err;
   }
-
-  const current = db.items[idx];
-  const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
-  db.items[idx] = updateItem(current, {
-    title,
-    delegatedFor,
-    delegatedTo,
-  });
-
-  await saveReqDb(req, db);
-  return res.redirect('/delegar');
 });
 
 app.get('/desglosar', async (req, res) => {
@@ -811,7 +891,6 @@ app.get('/desglosar', async (req, res) => {
     items,
     destinations: DESTINATIONS.filter(d => ['hacer', 'agendar', 'delegar'].includes(d.key)),
     needApiKey: Boolean(APP_API_KEY),
-    apiKey: '',
   });
 });
 
@@ -829,7 +908,7 @@ app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
     title,
     objective,
   }));
-  await saveReqDb(req, db);
+  await saveReqItem(req, db.items[idx], db);
   return res.redirect('/desglosar');
 });
 
@@ -845,7 +924,7 @@ app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
   const current = withDesglosarMeta(db.items[idx]);
   const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
   db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
-  await saveReqDb(req, db);
+  await saveReqItem(req, db.items[idx], db);
   return res.redirect('/desglosar');
 });
 
@@ -881,9 +960,13 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
 
   subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
   db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
-  db.items = [newTask, ...(db.items || [])];
-
-  await saveReqDb(req, db);
+  if (isStoreSupabaseMode()) {
+    await saveReqItem(req, db.items[idx], db);
+    await saveReqItem(req, newTask, db);
+  } else {
+    db.items = [newTask, ...(db.items || [])];
+    await saveReqDb(req, db);
+  }
   return res.redirect('/desglosar');
 });
 
@@ -899,7 +982,6 @@ for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar
       section: d,
       items,
       needApiKey: Boolean(APP_API_KEY),
-      apiKey: '',
     });
   });
 }
@@ -908,7 +990,7 @@ app.post('/items/:id/delete', requireApiKey, async (req, res) => {
   const id = String(req.params.id);
   const db = await loadReqDb(req);
   db.items = (db.items || []).filter(i => i.id !== id);
-  await saveReqDb(req, db);
+  await deleteReqItem(req, id, db);
   return res.redirect('back');
 });
 
@@ -1012,30 +1094,44 @@ app.get('/export/csv', async (req, res) => {
   return res.send(csv);
 });
 
-app.post('/import', requireApiKey, express.json({ limit: '10mb' }), async (req, res) => {
+app.post('/import', requireApiKey, async (req, res) => {
   try {
-    const importData = req.body;
-
-    if (!importData || !Array.isArray(importData.items)) {
-      return res.status(400).json({ ok: false, error: 'Invalid import data format' });
+    if (!req.is('application/json')) {
+      return res.status(415).json({ ok: false, error: 'Content-Type must be application/json' });
     }
+
+    const normalizedItems = validateAndNormalizeImportPayload(req.body, sanitizeInput);
 
     const db = await loadReqDb(req);
 
     // Merge: agregar items nuevos, no sobrescribir existentes
     const existingIds = new Set((db.items || []).map(i => i.id));
-    const newItems = importData.items.filter(i => !existingIds.has(i.id));
+    const newItems = normalizedItems.filter(i => !existingIds.has(i.id));
 
     db.items = [...(db.items || []), ...newItems];
     await saveReqDb(req, db);
 
     return res.json({ ok: true, imported: newItems.length });
   } catch (err) {
+    if (err instanceof RequestValidationError) {
+      return res.status(err.status || 400).json({ ok: false, error: err.message });
+    }
+    if (err instanceof ImportValidationError) {
+      return res.status(err.status || 400).json({
+        ok: false,
+        error: err.message,
+        details: err.details,
+      });
+    }
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
+app.get('/metricsz', metricsHandler);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 if (!process.env.VERCEL) {
   app.listen(PORT, HOST, () => {

@@ -5,9 +5,6 @@
   <form method="POST" action="/collect/add" class="space-y-2" id="collectForm">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <textarea id="collectInput" name="input" rows="2" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Escribe una actividad..."></textarea>
-    <% if (needApiKey) { %>
-      <input name="apiKey" type="password" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2" placeholder="API key" />
-    <% } %>
     <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors">Agregar</button>
     <p class="text-xs text-slate-500 dark:text-slate-400">Enter agrega · Shift+Enter salto de línea.</p>
   </form>
@@ -25,7 +22,6 @@
       <div class="flex items-center justify-between gap-2">
         <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           <input name="input" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1 text-sm" />
           <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
         </form>
@@ -47,7 +43,6 @@
 
       <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
         <% for (const d of destinations) { %>
           <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= d.label %></button>
         <% } %>
@@ -56,7 +51,7 @@
   <% } %>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     const form = document.getElementById('collectForm');
     const input = document.getElementById('collectInput');
@@ -88,20 +83,20 @@
     function buildRow(item) {
       const wrapper = document.createElement('div');
       wrapper.className = 'px-3 py-2';
+      const idAttr = String(item.id || '').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+      const idUrl = encodeURIComponent(String(item.id || ''));
       wrapper.innerHTML = `
         <div class="flex items-center justify-between gap-2">
-          <form method="POST" action="/collect/${item.id}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${item.id}">
+          <form method="POST" action="/collect/${idUrl}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${idAttr}">
             <input type="hidden" name="_csrf" value="${csrfToken}" />
-            <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
             <input name="input" class="w-full border rounded-md px-2 py-1 text-sm" />
             <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
           </form>
-          <div class="collect-text-row flex-1 min-w-0" data-id="${item.id}"><span class="text-sm"></span></div>
-          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${item.id}" title="Editar">✏️</button>
+          <div class="collect-text-row flex-1 min-w-0" data-id="${idAttr}"><span class="text-sm"></span></div>
+          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar">✏️</button>
         </div>
-        <form method="POST" action="/collect/${item.id}/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+        <form method="POST" action="/collect/${idUrl}/send" class="mt-1.5 flex flex-wrap items-center gap-1">
           <input type="hidden" name="_csrf" value="${csrfToken}" />
-          <% if (needApiKey) { %><input type="hidden" name="apiKey" value="<%= apiKey || '' %>" /><% } %>
           ${destinationButtons}
         </form>
       `;

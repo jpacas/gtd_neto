@@ -58,7 +58,6 @@ class TagManager {
           type="text"
           class="flex-1 text-xs border dark:border-slate-700 dark:bg-slate-800 rounded px-2 py-1"
           placeholder="Agregar tags (separados por comas)..."
-          value="${currentTags.join(', ')}"
         />
         <button class="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700" data-action="save">
           Guardar
@@ -68,13 +67,27 @@ class TagManager {
         </button>
       </div>
       <div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-        Sugerencias: ${this.allTags.slice(0, 10).map(t => `<span class="cursor-pointer hover:underline" data-tag="${t}">${t}</span>`).join(', ')}
+        Sugerencias:
       </div>
     `;
 
     const input = container.querySelector('input');
+    input.value = currentTags.join(', ');
     const saveBtn = container.querySelector('[data-action="save"]');
     const cancelBtn = container.querySelector('[data-action="cancel"]');
+    const suggestionsRow = container.querySelector('.mt-1');
+
+    this.allTags.slice(0, 10).forEach((tag, idx) => {
+      const tagBtn = document.createElement('button');
+      tagBtn.type = 'button';
+      tagBtn.className = 'cursor-pointer hover:underline';
+      tagBtn.dataset.tag = tag;
+      tagBtn.textContent = tag;
+      suggestionsRow.appendChild(tagBtn);
+      if (idx < Math.min(this.allTags.length, 10) - 1) {
+        suggestionsRow.appendChild(document.createTextNode(', '));
+      }
+    });
 
     // Click en sugerencias
     container.querySelectorAll('[data-tag]').forEach(el => {
@@ -111,9 +124,18 @@ class TagManager {
     if (!Array.isArray(tags) || tags.length === 0) return '';
 
     return tags
-      .map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">${tag}</span>`)
+      .map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">${escapeHtml(tag)}</span>`)
       .join(' ');
   }
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 // Instancia global
