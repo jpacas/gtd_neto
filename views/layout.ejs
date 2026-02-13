@@ -23,7 +23,7 @@
           <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400">Dashboard general + flujo Collect -> Destino</p>
         </div>
         <button
-          onclick="window.shortcutManager?.showHelp()"
+          id="shortcuts-help-btn"
           class="px-2 py-1 text-xs rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           title="Atajos de teclado"
         >
@@ -75,6 +75,14 @@
         });
       });
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const helpBtn = document.getElementById('shortcuts-help-btn');
+      if (!helpBtn) return;
+      helpBtn.addEventListener('click', () => {
+        window.shortcutManager?.showHelp();
+      });
+    });
   </script>
 
   <!-- Flash message to toast conversion -->
