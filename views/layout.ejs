@@ -38,8 +38,8 @@
 
       <% if (!hideAppNav) { %>
         <nav class="text-xs md:text-sm" aria-label="Navegación principal">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+            <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5 md:col-span-3">
               <div class="px-2 pb-1 text-[11px] text-slate-500 dark:text-slate-400">General</div>
               <div class="flex flex-wrap items-center gap-1.5">
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium" href="/">🧭 Dashboard</a>
@@ -47,20 +47,20 @@
               </div>
             </div>
 
-            <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
+            <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5 md:col-span-6">
               <div class="px-2 pb-1 text-[11px] text-slate-500 dark:text-slate-400">Ejecución</div>
               <div class="flex flex-wrap items-center gap-1.5">
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/collect">📥 Collect</a>
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/hacer">✅ Hacer</a>
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/agendar">🗓️ Agendar</a>
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/delegar">🤝 Delegar</a>
+                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/desglosar">🧩 Desglosar</a>
               </div>
             </div>
 
-            <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5">
-              <div class="px-2 pb-1 text-[11px] text-slate-500 dark:text-slate-400">Revisión</div>
+            <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5 md:col-span-3">
+              <div class="px-2 pb-1 text-[11px] text-slate-500 dark:text-slate-400">Cierre</div>
               <div class="flex flex-wrap items-center gap-1.5">
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/desglosar">🧩 Desglosar</a>
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/no-hacer">🚫 No hacer</a>
                 <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/terminado">🎯 Terminado</a>
               </div>
