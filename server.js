@@ -9,7 +9,7 @@ import compression from 'compression';
 import sanitizeHtml from 'sanitize-html';
 import { timingSafeEqual } from 'node:crypto';
 
-import { loadDb, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem, findRecentDuplicate } from './lib/store.js';
+import { loadDb, loadItemsForList, loadItemsByStatus, loadItemById, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem, findRecentDuplicate } from './lib/store.js';
 import {
   DESTINATIONS,
   destinationByKey,
@@ -70,6 +70,7 @@ const supabaseAuth = (SUPABASE_URL && SUPABASE_ANON_KEY)
 const {
   cspNonceMiddleware,
   requestIdMiddleware,
+  recordOperation,
   metricsHandler,
   notFoundHandler,
   errorHandler,
@@ -144,20 +145,7 @@ function csrfProtection(req, res, next) {
   }
 
   // SECURITY: Use timing-safe comparison to prevent timing attacks
-  try {
-    const requestBuffer = Buffer.from(tokenFromRequest, 'utf8');
-    const sessionBuffer = Buffer.from(tokenFromSession, 'utf8');
-
-    // Ensure buffers are same length before comparison
-    if (requestBuffer.length !== sessionBuffer.length) {
-      return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
-    }
-
-    if (!timingSafeEqual(requestBuffer, sessionBuffer)) {
-      return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
-    }
-  } catch (err) {
-    console.error('[csrfProtection] Error comparing tokens:', err);
+  if (!safeCompareStrings(tokenFromRequest, tokenFromSession)) {
     return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
   }
 
@@ -262,11 +250,22 @@ function extractApiKey(req) {
   return req.get('x-api-key') || '';
 }
 
+function safeCompareStrings(a, b) {
+  try {
+    const left = Buffer.from(String(a || ''), 'utf8');
+    const right = Buffer.from(String(b || ''), 'utf8');
+    if (left.length !== right.length) return false;
+    return timingSafeEqual(left, right);
+  } catch {
+    return false;
+  }
+}
+
 function requireApiKey(req, res, next) {
   if (!APP_API_KEY) return next();
   if (USE_SUPABASE && req.auth?.user) return next();
   const key = extractApiKey(req);
-  if (key && key === APP_API_KEY) return next();
+  if (key && safeCompareStrings(key, APP_API_KEY)) return next();
   return res.status(401).send('Unauthorized');
 }
 
@@ -274,51 +273,153 @@ function ownerForReq(req) {
   return req.auth?.user?.id || process.env.SUPABASE_OWNER || 'default';
 }
 
+function userFacingPersistError(err) {
+  const code = String(err?.code || '');
+  const msg = String(err?.message || '').toLowerCase();
+
+  if (code === '42P10' || msg.includes('no unique or exclusion constraint')) {
+    return 'La base de datos no tiene la configuración esperada para guardar items. Contacta al administrador.';
+  }
+  if (code === '42501' || msg.includes('permission denied') || msg.includes('row-level security')) {
+    return 'No tienes permisos para guardar este item. Vuelve a iniciar sesión.';
+  }
+  return 'No se pudo guardar el item en este momento. Intenta de nuevo.';
+}
+
 async function loadReqDb(req) {
-  return loadDb({ owner: ownerForReq(req) });
+  const startedAt = Date.now();
+  try {
+    const result = await loadDb({ owner: ownerForReq(req) });
+    recordOperation('loadReqDb', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('loadReqDb', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
+  }
+}
+
+async function loadReqItemsByList(req, list, options = {}) {
+  const startedAt = Date.now();
+  try {
+    const result = await loadItemsForList(list, { ...options, owner: ownerForReq(req) });
+    recordOperation('loadReqItemsByList', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('loadReqItemsByList', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
+  }
+}
+
+async function loadReqItemsByStatus(req, status, options = {}) {
+  const startedAt = Date.now();
+  try {
+    const result = await loadItemsByStatus(status, { ...options, owner: ownerForReq(req) });
+    recordOperation('loadReqItemsByStatus', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('loadReqItemsByStatus', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
+  }
+}
+
+async function loadReqItemById(req, id) {
+  const startedAt = Date.now();
+  try {
+    const result = await loadItemById(id, { owner: ownerForReq(req) });
+    recordOperation('loadReqItemById', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('loadReqItemById', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
+  }
 }
 
 async function saveReqDb(req, db) {
-  return saveDb(db, { owner: ownerForReq(req) });
+  const startedAt = Date.now();
+  try {
+    const result = await saveDb(db, { owner: ownerForReq(req) });
+    recordOperation('saveReqDb', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('saveReqDb', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
+  }
 }
 
 async function saveReqItem(req, item, dbWhenLocal = null) {
-  if (isStoreSupabaseMode()) {
-    return saveItem(item, { owner: ownerForReq(req) });
+  const startedAt = Date.now();
+  try {
+    if (isStoreSupabaseMode()) {
+      const result = await saveItem(item, { owner: ownerForReq(req) });
+      recordOperation('saveReqItem', { ok: true, durationMs: Date.now() - startedAt });
+      return result;
+    }
+    if (dbWhenLocal) {
+      const result = await saveReqDb(req, dbWhenLocal);
+      recordOperation('saveReqItem', { ok: true, durationMs: Date.now() - startedAt });
+      return result;
+    }
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === item.id);
+    if (idx === -1) db.items = [item, ...(db.items || [])];
+    else db.items[idx] = item;
+    const result = await saveReqDb(req, db);
+    recordOperation('saveReqItem', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('saveReqItem', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
   }
-  if (dbWhenLocal) return saveReqDb(req, dbWhenLocal);
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === item.id);
-  if (idx === -1) db.items = [item, ...(db.items || [])];
-  else db.items[idx] = item;
-  return saveReqDb(req, db);
 }
 
 async function deleteReqItem(req, id, dbWhenLocal = null) {
-  if (isStoreSupabaseMode()) {
-    return deleteItemById(id, { owner: ownerForReq(req) });
+  const startedAt = Date.now();
+  try {
+    if (isStoreSupabaseMode()) {
+      const result = await deleteItemById(id, { owner: ownerForReq(req) });
+      recordOperation('deleteReqItem', { ok: true, durationMs: Date.now() - startedAt });
+      return result;
+    }
+    if (dbWhenLocal) {
+      const result = await saveReqDb(req, dbWhenLocal);
+      recordOperation('deleteReqItem', { ok: true, durationMs: Date.now() - startedAt });
+      return result;
+    }
+    const db = await loadReqDb(req);
+    db.items = (db.items || []).filter(i => i.id !== id);
+    const result = await saveReqDb(req, db);
+    recordOperation('deleteReqItem', { ok: true, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (err) {
+    recordOperation('deleteReqItem', { ok: false, durationMs: Date.now() - startedAt });
+    throw err;
   }
-  if (dbWhenLocal) return saveReqDb(req, dbWhenLocal);
-  const db = await loadReqDb(req);
-  db.items = (db.items || []).filter(i => i.id !== id);
-  return saveReqDb(req, db);
 }
 
 // IMPROVED: Token refresh middleware - automatically refreshes expired tokens
 async function refreshTokenIfNeeded(req, res, next) {
   if (!USE_SUPABASE || !supabaseAuth) return next();
 
+  // If another middleware already attached auth, skip remote calls.
+  if (req.auth?.user) return next();
+
   const accessToken = req.cookies?.sb_access_token;
   const refreshToken = req.cookies?.sb_refresh_token;
 
   // No tokens, nothing to refresh
-  if (!accessToken || !refreshToken) return next();
+  if (!accessToken || !refreshToken) {
+    req.auth = { user: null };
+    return next();
+  }
 
   // Try to validate current access token
   const { data: userData, error: userError } = await supabaseAuth.auth.getUser(accessToken);
 
   // Token is valid, no refresh needed
-  if (userData?.user && !userError) return next();
+  if (userData?.user && !userError) {
+    req.auth = { user: userData.user };
+    return next();
+  }
 
   // Token is invalid/expired, try to refresh
   try {
@@ -330,21 +431,26 @@ async function refreshTokenIfNeeded(req, res, next) {
       // Refresh failed, clear cookies and continue
       res.clearCookie('sb_access_token', clearAuthCookieOptions());
       res.clearCookie('sb_refresh_token', clearAuthCookieOptions());
+      req.auth = { user: null };
       return next();
     }
 
     // Refresh succeeded, update cookies
     res.cookie('sb_access_token', refreshData.session.access_token, authCookieOptions());
     res.cookie('sb_refresh_token', refreshData.session.refresh_token, authCookieOptions());
+    req.auth = { user: refreshData.user || null };
 
     return next();
   } catch (err) {
     console.error('[refreshTokenIfNeeded] Error refreshing token:', err);
+    req.auth = { user: null };
     return next();
   }
 }
 
 async function attachAuth(req, res, next) {
+  if (req.auth) return next();
+
   if (!USE_SUPABASE || !supabaseAuth) {
     req.auth = { user: { id: process.env.SUPABASE_OWNER || 'default', email: 'local@offline' } };
     return next();
@@ -631,9 +737,7 @@ app.get('/stats', async (req, res) => {
 
 app.get('/collect', async (req, res) => {
   try {
-    const db = await loadReqDb(req);
-    const items = (db.items || [])
-      .filter(i => i.list === 'collect' && i.status !== 'done')
+    const items = (await loadReqItemsByList(req, 'collect', { excludeDone: true }))
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
     return await renderPage(res, 'collect', {
@@ -641,6 +745,7 @@ app.get('/collect', async (req, res) => {
       items,
       destinations: DESTINATIONS,
       needApiKey: Boolean(APP_API_KEY),
+      flash: req.query?.error ? { error: String(req.query.error) } : null,
     });
   } catch (err) {
     console.error('[collect] Error:', err);
@@ -649,10 +754,11 @@ app.get('/collect', async (req, res) => {
 });
 
 app.post('/collect/add', requireApiKey, async (req, res) => {
+  const wantsJson = String(req.get('accept') || '').includes('application/json');
   try {
     const input = sanitizeTextField(req.body?.input, sanitizeInput, { field: 'input', required: true, maxLen: 500 });
     if (!input) {
-      if (String(req.get('accept') || '').includes('application/json')) {
+      if (wantsJson) {
         return res.status(400).json({ ok: false, error: 'empty_input' });
       }
       return res.redirect('/collect');
@@ -662,7 +768,7 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
     const recentDuplicate = await findRecentDuplicate(input, { owner: ownerForReq(req) });
 
     if (recentDuplicate) {
-      if (String(req.get('accept') || '').includes('application/json')) {
+      if (wantsJson) {
         return res.json({ ok: true, item: recentDuplicate, deduped: true });
       }
       return res.redirect('/collect');
@@ -685,7 +791,7 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
       await saveReqDb(req, db);
     }
 
-    if (String(req.get('accept') || '').includes('application/json')) {
+    if (wantsJson) {
       return res.json({ ok: true, item, deduped: false });
     }
 
@@ -693,16 +799,22 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
   } catch (err) {
     console.error('[/collect/add] Error:', err);
     if (err instanceof RequestValidationError) {
-      if (String(req.get('accept') || '').includes('application/json')) {
+      if (wantsJson) {
         return res.status(err.status || 400).json({ ok: false, error: err.message });
       }
       return res.redirect('/collect');
     }
-    // Handle all other errors
-    if (String(req.get('accept') || '').includes('application/json')) {
-      return res.status(500).json({ ok: false, error: 'Internal server error' });
+
+    const userMessage = userFacingPersistError(err);
+
+    if (wantsJson) {
+      return res.status(500).json({
+        ok: false,
+        error: 'persist_failed',
+        message: userMessage,
+      });
     }
-    return res.redirect('/collect');
+    return res.redirect(`/collect?error=${encodeURIComponent(userMessage)}`);
   }
 });
 
@@ -712,14 +824,19 @@ app.post('/collect/:id/update', requireApiKey, async (req, res) => {
     const input = sanitizeTextField(req.body?.input, sanitizeInput, { field: 'input', required: true, maxLen: 500 });
     if (!input) return res.redirect('/collect');
 
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'collect') return res.redirect('/collect');
+      const next = updateItem(current, { input, title: input });
+      await saveReqItem(req, next);
+      return res.redirect('/collect');
+    }
+
     const db = await loadReqDb(req);
     const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'collect');
     if (idx === -1) return res.redirect('/collect');
 
-    db.items[idx] = updateItem(db.items[idx], {
-      input,
-      title: input,
-    });
+    db.items[idx] = updateItem(db.items[idx], { input, title: input });
     await saveReqItem(req, db.items[idx], db);
     return res.redirect('/collect');
   } catch (err) {
@@ -733,6 +850,23 @@ app.post('/collect/:id/send', requireApiKey, async (req, res) => {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
     const destination = sanitizeEnumField(req.body?.destination, DESTINATIONS.map(d => d.key), sanitizeInput, 'destination');
     if (!destinationByKey(destination)) return res.status(400).send('Bad destination');
+
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current) return res.redirect('/collect');
+
+      const basePatch = {
+        list: destination,
+        status: 'processed',
+      };
+      let patch = basePatch;
+      if (destination === 'hacer') patch = withHacerMeta(current, basePatch);
+      if (destination === 'desglosar') patch = withDesglosarMeta(current, basePatch);
+
+      const next = updateItem(current, patch);
+      await saveReqItem(req, next);
+      return res.redirect('/collect');
+    }
 
     const db = await loadReqDb(req);
   // Validación de owner implícita: loadReqDb solo carga items del usuario actual
@@ -769,11 +903,18 @@ app.post('/items/:id/tags', requireApiKey, async (req, res) => {
     .filter(t => t.length > 0 && t.length <= 20)
     .slice(0, 5); // Máximo 5 tags
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id);
-  if (idx === -1) {
-    return res.status(404).json({ ok: false, error: 'Item not found' });
-  }
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current) return res.status(404).json({ ok: false, error: 'Item not found' });
+      await saveReqItem(req, updateItem(current, { tags }));
+      return res.json({ ok: true, tags });
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id);
+    if (idx === -1) {
+      return res.status(404).json({ ok: false, error: 'Item not found' });
+    }
 
     db.items[idx] = updateItem(db.items[idx], { tags });
     await saveReqItem(req, db.items[idx], db);
@@ -788,9 +929,7 @@ app.post('/items/:id/tags', requireApiKey, async (req, res) => {
 });
 
 app.get('/hacer', async (req, res) => {
-  const db = await loadReqDb(req);
-  const items = (db.items || [])
-    .filter(i => i.list === 'hacer' && i.status !== 'done')
+  const items = (await loadReqItemsByList(req, 'hacer', { excludeDone: true }))
     .map(i => ({ ...i, ...withHacerMeta(i) }))
     .sort((a, b) => {
       const byUrgency = Number(b.urgency || 0) - Number(a.urgency || 0);
@@ -813,6 +952,20 @@ app.post('/hacer/add', requireApiKey, async (req, res) => {
 app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'hacer') return res.redirect('/hacer');
+      const patch = {
+        title: sanitizeTextField(req.body?.title || current.title || current.input || '', sanitizeInput, { field: 'title', required: true, maxLen: 280 }),
+        urgency: sanitizeIntegerField(req.body?.urgency ?? current.urgency ?? 3, { field: 'urgency', min: 1, max: 5, fallback: 3 }),
+        importance: sanitizeIntegerField(req.body?.importance ?? current.importance ?? 3, { field: 'importance', min: 1, max: 5, fallback: 3 }),
+        estimateMin: sanitizeIntegerField(req.body?.estimateMin ?? current.estimateMin ?? 10, { field: 'estimateMin', min: 1, max: 600, fallback: 10 }),
+      };
+      const next = updateItem(current, withHacerMeta(current, patch));
+      await saveReqItem(req, next);
+      return res.redirect('/hacer');
+    }
+
     const db = await loadReqDb(req);
     const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
     if (idx === -1) return res.redirect('/hacer');
@@ -839,6 +992,18 @@ app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
     const comment = sanitizeInput(String(req.body?.comment || ''));
 
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'hacer') return res.redirect('/hacer');
+      const next = updateItem(current, {
+        status: 'done',
+        completedAt: new Date().toISOString(),
+        completionComment: comment || null,
+      });
+      await saveReqItem(req, next);
+      return res.redirect('/hacer');
+    }
+
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
   if (idx === -1) return res.redirect('/hacer');
@@ -857,9 +1022,7 @@ app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
 });
 
 app.get('/terminado', async (req, res) => {
-  const db = await loadReqDb(req);
-  const items = (db.items || [])
-    .filter(i => i.status === 'done')
+  const items = (await loadReqItemsByStatus(req, 'done'))
     .sort((a, b) => String(b.completedAt || b.updatedAt || '').localeCompare(String(a.completedAt || a.updatedAt || '')));
 
   return renderPage(res, 'terminado', {
@@ -874,9 +1037,16 @@ app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
     const comment = sanitizeInput(String(req.body?.completionComment || ''));
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.status === 'done');
-  if (idx === -1) return res.redirect('/terminado');
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.status !== 'done') return res.redirect('/terminado');
+      await saveReqItem(req, updateItem(current, { completionComment: comment || null }));
+      return res.redirect('/terminado');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.status === 'done');
+    if (idx === -1) return res.redirect('/terminado');
 
     db.items[idx] = updateItem(db.items[idx], { completionComment: comment || null });
     await saveReqItem(req, db.items[idx], db);
@@ -888,9 +1058,7 @@ app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
 });
 
 app.get('/agendar', async (req, res) => {
-  const db = await loadReqDb(req);
-  const items = (db.items || [])
-    .filter(i => i.list === 'agendar' && i.status !== 'done')
+  const items = (await loadReqItemsByList(req, 'agendar', { excludeDone: true }))
     .map(i => ({ ...i, ...evaluateActionability(i.title || i.input || '') }))
     .sort((a, b) => {
       const ad = String(a.scheduledFor || '9999-12-31');
@@ -910,16 +1078,28 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
     const scheduledFor = sanitizeInput(String(req.body?.scheduledFor || ''));
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
-  if (idx === -1) return res.redirect('/agendar');
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'agendar') return res.redirect('/agendar');
+      const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+      const next = updateItem(current, {
+        title,
+        scheduledFor: scheduledFor || null,
+      });
+      await saveReqItem(req, next);
+      return res.redirect('/agendar');
+    }
 
-  const current = db.items[idx];
-  const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
-  db.items[idx] = updateItem(current, {
-    title,
-    scheduledFor: scheduledFor || null,
-  });
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
+    if (idx === -1) return res.redirect('/agendar');
+
+    const current = db.items[idx];
+    const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+    db.items[idx] = updateItem(current, {
+      title,
+      scheduledFor: scheduledFor || null,
+    });
 
     await saveReqItem(req, db.items[idx], db);
     return res.redirect('/agendar');
@@ -932,9 +1112,22 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
 app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
-  if (idx === -1) return res.redirect('/agendar');
+
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'agendar') return res.redirect('/agendar');
+      const next = updateItem(current, {
+        status: 'done',
+        completedAt: new Date().toISOString(),
+        completionComment: null,
+      });
+      await saveReqItem(req, next);
+      return res.redirect('/agendar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
+    if (idx === -1) return res.redirect('/agendar');
 
     db.items[idx] = updateItem(db.items[idx], {
       status: 'done',
@@ -950,13 +1143,11 @@ app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
 });
 
 app.get('/delegar', async (req, res) => {
-  const db = await loadReqDb(req);
   const groupBy = String(req.query?.groupBy || 'date') === 'owner' ? 'owner' : 'date';
   const ownerFilter = String(req.query?.owner || '').trim().toLowerCase();
   const error = String(req.query?.error || '');
 
-  const baseItems = (db.items || [])
-    .filter(i => i.list === 'delegar' && i.status !== 'done')
+  const baseItems = (await loadReqItemsByList(req, 'delegar', { excludeDone: true }))
     .map(i => ({
       ...i,
       delegatedTo: String(i.delegatedTo || '').trim(),
@@ -998,13 +1189,25 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
     const delegatedFor = sanitizeTextField(req.body?.delegatedFor, sanitizeInput, { field: 'delegatedFor', required: true, maxLen: 40 });
     const delegatedTo = sanitizeTextField(req.body?.delegatedTo, sanitizeInput, { field: 'delegatedTo', required: true, maxLen: 120 });
 
-    const db = await loadReqDb(req);
-    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
-    if (idx === -1) return res.redirect('/delegar?error=not_found');
-
     if (!delegatedFor || !delegatedTo) {
       return res.redirect('/delegar?error=missing_fields');
     }
+
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'delegar') return res.redirect('/delegar?error=not_found');
+      const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+      await saveReqItem(req, updateItem(current, {
+        title,
+        delegatedFor,
+        delegatedTo,
+      }));
+      return res.redirect('/delegar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'delegar');
+    if (idx === -1) return res.redirect('/delegar?error=not_found');
 
     const current = db.items[idx];
     const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
@@ -1023,9 +1226,7 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
 });
 
 app.get('/desglosar', async (req, res) => {
-  const db = await loadReqDb(req);
-  const items = (db.items || [])
-    .filter(i => i.list === 'desglosar' && i.status !== 'done')
+  const items = (await loadReqItemsByList(req, 'desglosar', { excludeDone: true }))
     .map(i => withDesglosarMeta(i))
     .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
 
@@ -1040,13 +1241,25 @@ app.get('/desglosar', async (req, res) => {
 app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
-  if (idx === -1) return res.redirect('/desglosar');
 
-  const current = withDesglosarMeta(db.items[idx]);
-  const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
-  const objective = sanitizeInput(String(req.body?.objective || current.objective || ''));
+    if (isStoreSupabaseMode()) {
+      const currentRaw = await loadReqItemById(req, id);
+      if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
+      const current = withDesglosarMeta(currentRaw);
+      const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+      const objective = sanitizeInput(String(req.body?.objective || current.objective || ''));
+      const next = updateItem(current, withDesglosarMeta(current, { title, objective }));
+      await saveReqItem(req, next);
+      return res.redirect('/desglosar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+
+    const current = withDesglosarMeta(db.items[idx]);
+    const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+    const objective = sanitizeInput(String(req.body?.objective || current.objective || ''));
 
     db.items[idx] = updateItem(current, withDesglosarMeta(current, {
       title,
@@ -1063,14 +1276,24 @@ app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
 app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
-  const text = sanitizeInput(String(req.body?.subtask || ''));
-  if (!text) return res.redirect('/desglosar');
+    const text = sanitizeInput(String(req.body?.subtask || ''));
+    if (!text) return res.redirect('/desglosar');
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
-  if (idx === -1) return res.redirect('/desglosar');
+    if (isStoreSupabaseMode()) {
+      const currentRaw = await loadReqItemById(req, id);
+      if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
+      const current = withDesglosarMeta(currentRaw);
+      const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
+      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      await saveReqItem(req, next);
+      return res.redirect('/desglosar');
+    }
 
-  const current = withDesglosarMeta(db.items[idx]);
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+
+    const current = withDesglosarMeta(db.items[idx]);
     const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
     db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
     await saveReqItem(req, db.items[idx], db);
@@ -1085,42 +1308,68 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
     const subId = sanitizeIdParam(req.params.subId, sanitizeInput);
-  const destination = String(req.body?.destination || '');
-  if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.status(400).send('Bad destination');
+    const destination = String(req.body?.destination || '');
+    if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.status(400).send('Bad destination');
 
-  const db = await loadReqDb(req);
-  const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
-  if (idx === -1) return res.redirect('/desglosar');
+    if (isStoreSupabaseMode()) {
+      const currentRaw = await loadReqItemById(req, id);
+      if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
 
-  const current = withDesglosarMeta(db.items[idx]);
-  const subtasks = [...(current.subtasks || [])];
-  const subIdx = subtasks.findIndex(s => String(s.id) === subId);
-  if (subIdx === -1) return res.redirect('/desglosar');
+      const current = withDesglosarMeta(currentRaw);
+      const subtasks = [...(current.subtasks || [])];
+      const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+      if (subIdx === -1) return res.redirect('/desglosar');
 
-  const subtask = subtasks[subIdx];
-  const text = String(subtask.text || '').trim();
-  if (!text) return res.redirect('/desglosar');
+      const subtask = subtasks[subIdx];
+      const text = String(subtask.text || '').trim();
+      if (!text) return res.redirect('/desglosar');
 
-  const base = newItem({ input: text });
-  let newTask = updateItem(base, {
-    title: text,
-    kind: 'action',
-    list: destination,
-    status: 'processed',
-    sourceProjectId: id,
-    sourceSubtaskId: subId,
-  });
-  if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
+      const base = newItem({ input: text });
+      let newTask = updateItem(base, {
+        title: text,
+        kind: 'action',
+        list: destination,
+        status: 'processed',
+        sourceProjectId: id,
+        sourceSubtaskId: subId,
+      });
+      if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
 
-  subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
-  db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
-  if (isStoreSupabaseMode()) {
-    await saveReqItem(req, db.items[idx], db);
-    await saveReqItem(req, newTask, db);
-  } else {
-      db.items = [newTask, ...(db.items || [])];
-      await saveReqDb(req, db);
+      subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
+      const updatedProject = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      await saveReqItem(req, updatedProject);
+      await saveReqItem(req, newTask);
+      return res.redirect('/desglosar');
     }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+
+    const current = withDesglosarMeta(db.items[idx]);
+    const subtasks = [...(current.subtasks || [])];
+    const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+    if (subIdx === -1) return res.redirect('/desglosar');
+
+    const subtask = subtasks[subIdx];
+    const text = String(subtask.text || '').trim();
+    if (!text) return res.redirect('/desglosar');
+
+    const base = newItem({ input: text });
+    let newTask = updateItem(base, {
+      title: text,
+      kind: 'action',
+      list: destination,
+      status: 'processed',
+      sourceProjectId: id,
+      sourceSubtaskId: subId,
+    });
+    if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
+
+    subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
+    db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+    db.items = [newTask, ...(db.items || [])];
+    await saveReqDb(req, db);
     return res.redirect('/desglosar');
   } catch (err) {
     if (err instanceof RequestValidationError) return res.redirect('/desglosar');
@@ -1130,9 +1379,7 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
 
 for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar' && x.key !== 'desglosar')) {
   app.get(`/${d.key}`, async (req, res) => {
-    const db = await loadReqDb(req);
-    const items = (db.items || [])
-      .filter(i => i.list === d.key && i.status !== 'done')
+    const items = (await loadReqItemsByList(req, d.key, { excludeDone: true }))
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
     return renderPage(res, 'destination', {
@@ -1147,9 +1394,13 @@ for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar
 app.post('/items/:id/delete', requireApiKey, async (req, res) => {
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
-    const db = await loadReqDb(req);
-    db.items = (db.items || []).filter(i => i.id !== id);
-    await deleteReqItem(req, id, db);
+    if (isStoreSupabaseMode()) {
+      await deleteReqItem(req, id);
+    } else {
+      const db = await loadReqDb(req);
+      db.items = (db.items || []).filter(i => i.id !== id);
+      await deleteReqItem(req, id, db);
+    }
     return res.redirect('back');
   } catch (err) {
     if (err instanceof RequestValidationError) return res.redirect('back');
@@ -1246,7 +1497,7 @@ app.post('/import', requireApiKey, async (req, res) => {
         details: err.details,
       });
     }
-    return res.status(500).json({ ok: false, error: err.message });
+    return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 

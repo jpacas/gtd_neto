@@ -14,15 +14,20 @@ class ToastManager {
       this.container = document.createElement('div');
       this.container.id = 'toast-container';
       this.container.className = 'fixed top-4 right-4 z-50 space-y-2';
+      this.container.setAttribute('aria-live', 'polite');
+      this.container.setAttribute('aria-atomic', 'false');
       document.body.appendChild(this.container);
     } else {
       this.container = document.getElementById('toast-container');
+      this.container.setAttribute('aria-live', 'polite');
+      this.container.setAttribute('aria-atomic', 'false');
     }
   }
 
   show(message, type = 'info', duration = 3000) {
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type} transform translate-x-full opacity-0 transition-all duration-300 ease-out`;
+    toast.className = 'toast transform translate-x-full opacity-0 transition-[transform,opacity] duration-300 ease-out';
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
 
     const colors = {
       success: 'bg-emerald-50 border-emerald-200 text-emerald-800',

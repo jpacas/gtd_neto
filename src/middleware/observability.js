@@ -15,7 +15,32 @@ export function createObservabilityMiddleware({ isProduction }) {
     requests5xx: 0,
     durationMsTotal: 0,
     byStatus: {},
+    byRoute: {},
+    storeOps: {},
   };
+
+  function ensureMetricBucket(container, key) {
+    if (!container[key]) {
+      container[key] = {
+        count: 0,
+        errors: 0,
+        durationMsTotal: 0,
+        avgDurationMs: 0,
+        maxDurationMs: 0,
+      };
+    }
+    return container[key];
+  }
+
+  function recordOperation(opName, { ok = true, durationMs = 0 } = {}) {
+    const key = String(opName || 'unknown');
+    const bucket = ensureMetricBucket(metrics.storeOps, key);
+    bucket.count += 1;
+    if (!ok) bucket.errors += 1;
+    bucket.durationMsTotal += durationMs;
+    bucket.avgDurationMs = Number((bucket.durationMsTotal / bucket.count).toFixed(2));
+    bucket.maxDurationMs = Math.max(bucket.maxDurationMs, durationMs);
+  }
 
   function logStructured(level, event, extra = {}) {
     const payload = {
@@ -46,6 +71,13 @@ export function createObservabilityMiddleware({ isProduction }) {
       metrics.durationMsTotal += durationMs;
       if (res.statusCode >= 500) metrics.requests5xx += 1;
       metrics.byStatus[res.statusCode] = (metrics.byStatus[res.statusCode] || 0) + 1;
+      const routeKey = `${req.method} ${req.path || req.url || ''}`;
+      const routeBucket = ensureMetricBucket(metrics.byRoute, routeKey);
+      routeBucket.count += 1;
+      if (res.statusCode >= 500) routeBucket.errors += 1;
+      routeBucket.durationMsTotal += durationMs;
+      routeBucket.avgDurationMs = Number((routeBucket.durationMsTotal / routeBucket.count).toFixed(2));
+      routeBucket.maxDurationMs = Math.max(routeBucket.maxDurationMs, durationMs);
 
       logStructured('info', 'http_request', {
         requestId,
@@ -112,6 +144,7 @@ export function createObservabilityMiddleware({ isProduction }) {
   return {
     cspNonceMiddleware,
     requestIdMiddleware,
+    recordOperation,
     metricsHandler,
     notFoundHandler,
     errorHandler,

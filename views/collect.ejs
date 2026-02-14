@@ -4,9 +4,10 @@
 <div class="mt-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
   <form method="POST" action="/collect/add" class="space-y-2" id="collectForm">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <textarea id="collectInput" name="input" rows="2" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Escribe una actividad..."></textarea>
+    <label for="collectInput" class="sr-only">Nueva actividad</label>
+    <textarea id="collectInput" name="input" rows="2" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Escribe una actividad..." aria-describedby="collect-help"></textarea>
     <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors">Agregar</button>
-    <p class="text-xs text-slate-500 dark:text-slate-400">Enter agrega · Shift+Enter salto de línea.</p>
+    <p id="collect-help" class="text-xs text-slate-500 dark:text-slate-400">Enter agrega · Shift+Enter salto de línea.</p>
   </form>
 </div>
 
@@ -50,7 +51,7 @@
           <span class="text-sm"><%= it.title || it.input %></span>
         </div>
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar">✏️</button>
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar" aria-label="Editar actividad">✏️</button>
       </div>
 
       <% if (it.tags && it.tags.length > 0) { %>
@@ -113,7 +114,7 @@
             <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
           </form>
           <div class="collect-text-row flex-1 min-w-0" data-id="${idAttr}"><span class="text-sm"></span></div>
-          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar">✏️</button>
+          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar" aria-label="Editar actividad">✏️</button>
         </div>
         <form method="POST" action="/collect/${idUrl}/send" class="mt-1.5 flex flex-wrap items-center gap-1">
           <input type="hidden" name="_csrf" value="${csrfToken}" />
@@ -143,9 +144,26 @@
           headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
           body,
         });
-        if (!r.ok) throw new Error('request_failed');
-        const data = await r.json();
-        if (!data?.ok || !data?.item) throw new Error('bad_payload');
+
+        let data = null;
+        try {
+          data = await r.json();
+        } catch {
+          throw new Error('bad_payload');
+        }
+
+        if (!r.ok || !data?.ok) {
+          const msg = String(data?.message || data?.error || 'No se pudo guardar el item.');
+          throw new Error(msg);
+        }
+
+        if (data.deduped) {
+          input.value = '';
+          input.focus();
+          toast.info('Ese item ya estaba en Collect');
+          return;
+        }
+        if (!data?.item) throw new Error('bad_payload');
 
         const list = document.getElementById('collectList');
         const empty = document.getElementById('collectEmpty');
@@ -159,8 +177,8 @@
         input.focus();
         toast.success('Item agregado correctamente');
       } catch (err) {
-        toast.error('Error al agregar item. Recargando...');
-        setTimeout(() => form.submit(), 1000);
+        const msg = String(err?.message || 'No se pudo guardar el item.');
+        toast.error(msg);
       } finally {
         isSubmitting = false;
         LoadingManager.hide(addBtn);

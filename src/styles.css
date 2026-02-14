@@ -18,6 +18,15 @@
     --color-text: 241 245 249;
     --color-primary: 59 130 246;
   }
+
+  html {
+    color-scheme: light;
+  }
+
+  .dark html,
+  html.dark {
+    color-scheme: dark;
+  }
 }
 
 @layer components {
@@ -93,6 +102,15 @@
   }
 
   button, a {
-    @apply transition-all duration-150;
+    @apply transition-colors duration-150;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

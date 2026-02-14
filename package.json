@@ -14,7 +14,8 @@
     "lint": "node scripts/lint.mjs",
     "format:check": "node scripts/format-check.mjs",
     "test": "node --test",
-    "check": "npm run lint && npm run format:check && npm run test"
+    "check": "npm run lint && npm run format:check && npm run test",
+    "check:supabase:conflict": "node scripts/check-supabase-conflict-target.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",

@@ -18,9 +18,9 @@
   </div>
   <div class="flex gap-2 items-center flex-wrap">
     <span class="text-xs text-slate-500 dark:text-slate-400">Filtrar:</span>
-    <button onclick="filterByUrgency(0)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">Todos</button>
-    <button onclick="filterByUrgency(5)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">🔴 Urgente (5)</button>
-    <button onclick="filterByUrgency(4)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">🟡 Alta (4)</button>
+    <button onclick="filterByUrgency(event, 0)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">Todos</button>
+    <button onclick="filterByUrgency(event, 5)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">🔴 Urgente (5)</button>
+    <button onclick="filterByUrgency(event, 4)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">🟡 Alta (4)</button>
     <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Ir a Collect</a>
   </div>
 </div>
@@ -39,7 +39,7 @@
         Las acciones rápidas (&lt;10 minutos) aparecerán aquí.<br/>
         Organiza tus tareas desde Collect para empezar.
       </div>
-      <a href="/collect" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all text-sm font-medium hover:shadow-md">
+      <a href="/collect" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium hover:shadow-md">
         <span>📥</span>
         <span>Ir a Collect</span>
       </a>
@@ -70,7 +70,7 @@
           <span class="text-sm truncate"><%= it.title || it.input %></span>
         </form>
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar texto">✏️</button>
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar texto" aria-label="Editar texto de actividad">✏️</button>
 
         <form method="POST" action="/hacer/<%= it.id %>/complete" class="hacer-complete-form">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -158,7 +158,7 @@
   })();
 
   // Función de filtrado por urgencia
-  window.filterByUrgency = function(minUrgency) {
+  window.filterByUrgency = function(evt, minUrgency) {
     const rows = document.querySelectorAll('#hacerList > div[class*="px-3"]');
     let visibleCount = 0;
 
@@ -184,7 +184,9 @@
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'border-blue-300', 'dark:border-blue-700');
     });
-    event.target.classList.add('bg-blue-100', 'dark:bg-blue-900', 'border-blue-300', 'dark:border-blue-700');
+    if (evt?.target) {
+      evt.target.classList.add('bg-blue-100', 'dark:bg-blue-900', 'border-blue-300', 'dark:border-blue-700');
+    }
 
     toast.info(`Mostrando ${visibleCount} item${visibleCount !== 1 ? 's' : ''}`, 1500);
   };

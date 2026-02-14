@@ -9,12 +9,12 @@
   <form method="POST" action="/auth/login" class="mt-4 space-y-3" id="loginForm">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <div>
-      <label class="text-xs text-slate-500 dark:text-slate-400">Email</label>
-      <input type="email" name="email" required class="w-full border dark:border-slate-700 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" />
+      <label for="login-email" class="text-xs text-slate-500 dark:text-slate-400">Email</label>
+      <input id="login-email" type="email" name="email" required autocomplete="email" class="w-full border dark:border-slate-700 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" />
     </div>
     <div>
-      <label class="text-xs text-slate-500 dark:text-slate-400">Contraseña</label>
-      <input type="password" name="password" required minlength="6" class="w-full border dark:border-slate-700 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" />
+      <label for="login-password" class="text-xs text-slate-500 dark:text-slate-400">Contraseña</label>
+      <input id="login-password" type="password" name="password" required minlength="6" autocomplete="current-password" class="w-full border dark:border-slate-700 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" />
     </div>
     <button type="submit" id="loginBtn" class="w-full rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors">Entrar</button>
   </form>
@@ -43,8 +43,8 @@
 
   <form method="POST" action="/auth/forgot" class="mt-4 pt-4 border-t space-y-2">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <div class="text-xs text-slate-500">¿Olvidaste tu contraseña?</div>
-    <input type="email" name="email" placeholder="Tu correo" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+    <label for="forgot-email" class="text-xs text-slate-500">¿Olvidaste tu contraseña?</label>
+    <input id="forgot-email" type="email" name="email" placeholder="Tu correo" required autocomplete="email" class="w-full border rounded-lg px-3 py-2 text-sm" />
     <button class="w-full rounded-lg border bg-white px-4 py-2 text-sm hover:bg-slate-50">Enviar recuperación</button>
   </form>
 

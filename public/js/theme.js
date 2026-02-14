@@ -46,8 +46,9 @@ class ThemeManager {
   createToggle() {
     const toggleBtn = document.createElement('button');
     toggleBtn.id = 'theme-toggle';
-    toggleBtn.className = 'fixed bottom-4 right-4 p-3 rounded-full bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-lg hover:shadow-xl transition-all z-40';
-    toggleBtn.setAttribute('aria-label', 'Toggle dark mode');
+    toggleBtn.className = 'fixed right-4 p-3 rounded-full bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-lg hover:shadow-xl transition-shadow transition-colors z-40';
+    toggleBtn.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + 1rem)';
+    toggleBtn.setAttribute('aria-label', 'Cambiar tema');
     toggleBtn.innerHTML = this.theme === 'dark' ? '☀️' : '🌙';
 
     toggleBtn.addEventListener('click', () => {
