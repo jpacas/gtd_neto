@@ -42,23 +42,23 @@
             <div class="flex flex-wrap items-center gap-2">
               <div class="flex flex-wrap items-center gap-1.5 rounded-lg border dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-1.5 py-1">
                 <span class="px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">General</span>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium" href="/">🧭 Dashboard</a>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/stats" title="Estadísticas">📈 Estadísticas</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-medium" href="/" data-page="/">🧭 Dashboard</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/stats" data-page="/stats" title="Estadísticas">📈 Estadísticas</a>
               </div>
 
               <div class="flex flex-wrap items-center gap-1.5 rounded-lg border dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-1.5 py-1">
                 <span class="px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">Ejecución</span>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/collect">📥 Collect</a>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/hacer">✅ Hacer</a>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/agendar">🗓️ Agendar</a>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/delegar">🤝 Delegar</a>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/desglosar">🧩 Desglosar</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/collect" data-page="/collect">📥 Collect</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/hacer" data-page="/hacer">✅ Hacer</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/agendar" data-page="/agendar">🗓️ Agendar</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/delegar" data-page="/delegar">🤝 Delegar</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/desglosar" data-page="/desglosar">🧩 Desglosar</a>
               </div>
 
               <div class="flex flex-wrap items-center gap-1.5 rounded-lg border dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-1.5 py-1">
                 <span class="px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">Cierre</span>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/no-hacer">🚫 No hacer</a>
-                <a class="px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" href="/terminado">🎯 Terminado</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
+                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" href="/terminado" data-page="/terminado">🎯 Terminado</a>
               </div>
             </div>
           </div>
@@ -79,6 +79,18 @@
   <script nonce="<%= cspNonce %>" src="/public/js/toast.js"></script>
   <script nonce="<%= cspNonce %>" src="/public/js/utils.js"></script>
   <script nonce="<%= cspNonce %>" src="/public/js/tags.js"></script>
+
+  <!-- Active nav indicator -->
+  <script nonce="<%= cspNonce %>">
+    (function() {
+      const path = window.location.pathname;
+      document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.dataset.page === path) {
+          link.classList.add('nav-active');
+        }
+      });
+    })();
+  </script>
 
   <!-- PWA Service Worker -->
   <script nonce="<%= cspNonce %>">

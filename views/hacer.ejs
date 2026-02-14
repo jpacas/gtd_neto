@@ -32,7 +32,18 @@
     <span>Actividad</span>
   </div>
   <% if (!items.length) { %>
-    <div class="p-5 text-sm text-slate-600">No hay acciones en Hacer. <a href="/collect" class="underline">Enviar desde Collect</a></div>
+    <div class="empty-state m-4">
+      <div class="text-4xl mb-3">✅</div>
+      <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">No hay acciones pendientes</div>
+      <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Las acciones rápidas (&lt;10 minutos) aparecerán aquí.<br/>
+        Organiza tus tareas desde Collect para empezar.
+      </div>
+      <a href="/collect" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all text-sm font-medium hover:shadow-md">
+        <span>📥</span>
+        <span>Ir a Collect</span>
+      </a>
+    </div>
   <% } %>
 
   <% for (const it of items) { %>

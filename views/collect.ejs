@@ -12,9 +12,29 @@
 
 <div id="collectList" class="mt-4 divide-y dark:divide-slate-700 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
   <% if (!items.length) { %>
-    <div id="collectEmpty" class="p-4 text-sm text-slate-600 dark:text-slate-400">Collect está vacío.</div>
+    <div id="collectEmpty" class="empty-state m-3">
+      <div class="text-4xl mb-3">📥</div>
+      <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Tu bandeja está vacía</div>
+      <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Captura rápidamente ideas, tareas o recordatorios.<br/>
+        Después podrás organizarlos y asignarles un destino.
+      </div>
+      <div class="text-xs text-slate-500 dark:text-slate-500">
+        💡 Tip: Usa <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono text-[10px]">Enter</kbd> para agregar rápidamente
+      </div>
+    </div>
   <% } else { %>
-    <div id="collectEmpty" class="p-4 text-sm text-slate-600 dark:text-slate-400 hidden">Collect está vacío.</div>
+    <div id="collectEmpty" class="empty-state m-3 hidden">
+      <div class="text-4xl mb-3">📥</div>
+      <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Tu bandeja está vacía</div>
+      <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Captura rápidamente ideas, tareas o recordatorios.<br/>
+        Después podrás organizarlos y asignarles un destino.
+      </div>
+      <div class="text-xs text-slate-500 dark:text-slate-500">
+        💡 Tip: Usa <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono text-[10px]">Enter</kbd> para agregar rápidamente
+      </div>
+    </div>
   <% } %>
 
   <% for (const it of items) { %>

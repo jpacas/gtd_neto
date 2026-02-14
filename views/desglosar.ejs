@@ -3,7 +3,20 @@
 
 <div class="mt-4 space-y-3">
   <% if (!items.length) { %>
-    <div class="bg-white border rounded-xl p-5 text-sm text-slate-600">No hay proyectos en Desglosar.</div>
+    <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl overflow-hidden">
+      <div class="empty-state m-4">
+        <div class="text-4xl mb-3">🧩</div>
+        <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Sin proyectos activos</div>
+        <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+          Los proyectos complejos que requieren múltiples pasos aparecerán aquí.<br/>
+          Desglosa tareas grandes en acciones específicas.
+        </div>
+        <a href="/collect" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all text-sm font-medium hover:shadow-md">
+          <span>📥</span>
+          <span>Ir a Collect</span>
+        </a>
+      </div>
+    </div>
   <% } %>
 
   <% for (const it of items) { %>

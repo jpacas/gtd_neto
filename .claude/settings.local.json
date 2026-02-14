@@ -17,7 +17,9 @@
       "Bash(npm test:*)",
       "Bash(npm run lint:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(NODE_ENV=test APP_API_KEY=testkey node:*)",
+      "Bash(node -e:*)"
     ]
   }
 }
