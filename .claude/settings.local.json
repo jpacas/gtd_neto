@@ -9,7 +9,15 @@
       "Bash(npm install:*)",
       "Bash(npm run build:css:*)",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(grep -v grep echo \"\" echo \"Logs recientes del servidor:\" tail -5 /tmp/gtd_server.log)",
+      "Bash(node verify_final.mjs:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
