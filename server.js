@@ -57,8 +57,15 @@ if (USE_SUPABASE && (!SUPABASE_URL || !SUPABASE_ANON_KEY)) {
   console.warn('[gtd_neto] WARNING: USE_SUPABASE=true but SUPABASE_URL/SUPABASE_ANON_KEY are missing. Login will fail.');
 }
 
+// IMPROVED: Enable autoRefreshToken for better session management
 const supabaseAuth = (SUPABASE_URL && SUPABASE_ANON_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      },
+    })
   : null;
 const {
   cspNonceMiddleware,
@@ -297,6 +304,46 @@ async function deleteReqItem(req, id, dbWhenLocal = null) {
   return saveReqDb(req, db);
 }
 
+// IMPROVED: Token refresh middleware - automatically refreshes expired tokens
+async function refreshTokenIfNeeded(req, res, next) {
+  if (!USE_SUPABASE || !supabaseAuth) return next();
+
+  const accessToken = req.cookies?.sb_access_token;
+  const refreshToken = req.cookies?.sb_refresh_token;
+
+  // No tokens, nothing to refresh
+  if (!accessToken || !refreshToken) return next();
+
+  // Try to validate current access token
+  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(accessToken);
+
+  // Token is valid, no refresh needed
+  if (userData?.user && !userError) return next();
+
+  // Token is invalid/expired, try to refresh
+  try {
+    const { data: refreshData, error: refreshError } = await supabaseAuth.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (refreshError || !refreshData?.session) {
+      // Refresh failed, clear cookies and continue
+      res.clearCookie('sb_access_token', clearAuthCookieOptions());
+      res.clearCookie('sb_refresh_token', clearAuthCookieOptions());
+      return next();
+    }
+
+    // Refresh succeeded, update cookies
+    res.cookie('sb_access_token', refreshData.session.access_token, authCookieOptions());
+    res.cookie('sb_refresh_token', refreshData.session.refresh_token, authCookieOptions());
+
+    return next();
+  } catch (err) {
+    console.error('[refreshTokenIfNeeded] Error refreshing token:', err);
+    return next();
+  }
+}
+
 async function attachAuth(req, res, next) {
   if (!USE_SUPABASE || !supabaseAuth) {
     req.auth = { user: { id: process.env.SUPABASE_OWNER || 'default', email: 'local@offline' } };
@@ -348,6 +395,8 @@ function renderPage(res, view, data) {
     });
 }
 
+// IMPROVED: Refresh token before attaching auth
+app.use(refreshTokenIfNeeded);
 app.use(attachAuth);
 app.use(attachCsrfToken); // Agregar CSRF token a todas las respuestas
 app.use((req, res, next) => {
