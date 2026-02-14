@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import sanitizeHtml from 'sanitize-html';
+import { timingSafeEqual } from 'node:crypto';
 
 import { loadDb, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem, findRecentDuplicate } from './lib/store.js';
 import {
@@ -40,6 +41,7 @@ const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '64kb';
 const IMPORT_JSON_BODY_LIMIT = process.env.IMPORT_JSON_BODY_LIMIT || '10mb';
 const AUTH_COOKIE_MAX_AGE_MS = Number(process.env.AUTH_COOKIE_MAX_AGE_MS || 7 * 24 * 60 * 60 * 1000);
 const CSRF_COOKIE_MAX_AGE_MS = Number(process.env.CSRF_COOKIE_MAX_AGE_MS || 24 * 60 * 60 * 1000);
+const APP_URL = process.env.APP_URL || (IS_PRODUCTION ? '' : `http://${HOST}:${PORT}`);
 
 if (IS_PRODUCTION && !USE_SUPABASE && !APP_API_KEY) {
   throw new Error(
@@ -130,7 +132,25 @@ function csrfProtection(req, res, next) {
   const tokenFromRequest = tokenFromBody || tokenFromHeader;
   const tokenFromSession = req.cookies?.csrf_token;
 
-  if (!tokenFromRequest || !tokenFromSession || tokenFromRequest !== tokenFromSession) {
+  if (!tokenFromRequest || !tokenFromSession) {
+    return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
+  }
+
+  // SECURITY: Use timing-safe comparison to prevent timing attacks
+  try {
+    const requestBuffer = Buffer.from(tokenFromRequest, 'utf8');
+    const sessionBuffer = Buffer.from(tokenFromSession, 'utf8');
+
+    // Ensure buffers are same length before comparison
+    if (requestBuffer.length !== sessionBuffer.length) {
+      return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
+    }
+
+    if (!timingSafeEqual(requestBuffer, sessionBuffer)) {
+      return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
+    }
+  } catch (err) {
+    console.error('[csrfProtection] Error comparing tokens:', err);
     return res.status(403).send('CSRF token inválido. Recarga la página e intenta de nuevo.');
   }
 
@@ -190,6 +210,15 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5, // Solo 5 intentos de login
   message: 'Demasiados intentos de autenticación, intenta de nuevo en 15 minutos.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting para export (prevenir scraping masivo)
+const exportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10, // 10 exports por ventana
+  message: 'Demasiadas exportaciones, intenta de nuevo en 15 minutos.',
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -348,6 +377,17 @@ app.post('/auth/login', authLimiter, async (req, res) => {
   if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
 
   const email = sanitizeInput(String(req.body?.email || '').trim());
+
+  // SECURITY: Validate email format before sending to Supabase
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return renderPage(res, 'login', {
+      title: 'Login',
+      flash: { error: 'Formato de email inválido.' },
+      needApiKey: false,
+    });
+  }
+
   const password = String(req.body?.password || ''); // No sanitizar password
 
   const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
@@ -368,6 +408,17 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
   if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/');
 
   const email = sanitizeInput(String(req.body?.email || '').trim());
+
+  // SECURITY: Validate email format before sending to Supabase
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return renderPage(res, 'signup', {
+      title: 'Registro',
+      flash: { error: 'Formato de email inválido.' },
+      needApiKey: false,
+    });
+  }
+
   const password = String(req.body?.password || ''); // No sanitizar password
 
   const { error } = await supabaseAuth.auth.signUp({ email, password });
@@ -388,7 +439,19 @@ app.post('/auth/forgot', authLimiter, async (req, res) => {
   const email = sanitizeInput(String(req.body?.email || '').trim());
   if (!email) return res.redirect('/login?message=Ingresa tu correo para recuperar contraseña.');
 
-  const redirectTo = `${req.protocol}://${req.get('host')}/login?message=Contraseña actualizada. Ya puedes iniciar sesión.`;
+  // SECURITY: Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.redirect('/login?message=Formato de email inválido.');
+  }
+
+  // SECURITY: Use APP_URL instead of req.get('host') to prevent SSRF attacks
+  if (!APP_URL) {
+    console.error('[auth/forgot] APP_URL not configured - cannot send password reset');
+    return res.redirect('/login?message=Error de configuración. Contacta al administrador.');
+  }
+
+  const redirectTo = `${APP_URL}/login?message=Contraseña actualizada. Ya puedes iniciar sesión.`;
   await supabaseAuth.auth.resetPasswordForEmail(email, { redirectTo });
   return res.redirect('/login?message=Si el correo existe, enviamos enlace de recuperación.');
 });
@@ -401,7 +464,7 @@ app.post('/auth/logout', (req, res) => {
 });
 
 app.use((req, res, next) => {
-  const publicPaths = ['/login', '/signup', '/auth/login', '/auth/signup', '/auth/forgot', '/auth/logout', '/healthz', '/metricsz', '/favicon.ico', '/favicon.png'];
+  const publicPaths = ['/login', '/signup', '/auth/login', '/auth/signup', '/auth/forgot', '/auth/logout', '/healthz', '/favicon.ico', '/favicon.png'];
   if (publicPaths.includes(req.path) || req.path.startsWith('/docs/')) return next();
   return requireAuth(req, res, next);
 });
@@ -723,8 +786,9 @@ app.post('/hacer/:id/update', requireApiKey, async (req, res) => {
 });
 
 app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const comment = sanitizeInput(String(req.body?.comment || ''));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const comment = sanitizeInput(String(req.body?.comment || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'hacer');
@@ -735,8 +799,12 @@ app.post('/hacer/:id/complete', requireApiKey, async (req, res) => {
     completedAt: new Date().toISOString(),
     completionComment: comment || null,
   });
-  await saveReqItem(req, db.items[idx], db);
-  return res.redirect('/hacer');
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/hacer');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/hacer');
+    throw err;
+  }
 });
 
 app.get('/terminado', async (req, res) => {
@@ -753,16 +821,21 @@ app.get('/terminado', async (req, res) => {
 });
 
 app.post('/terminado/:id/comment', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const comment = sanitizeInput(String(req.body?.completionComment || ''));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const comment = sanitizeInput(String(req.body?.completionComment || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.status === 'done');
   if (idx === -1) return res.redirect('/terminado');
 
-  db.items[idx] = updateItem(db.items[idx], { completionComment: comment || null });
-  await saveReqItem(req, db.items[idx], db);
-  return res.redirect('/terminado');
+    db.items[idx] = updateItem(db.items[idx], { completionComment: comment || null });
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/terminado');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/terminado');
+    throw err;
+  }
 });
 
 app.get('/agendar', async (req, res) => {
@@ -784,8 +857,9 @@ app.get('/agendar', async (req, res) => {
 });
 
 app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
-  const scheduledFor = sanitizeInput(String(req.body?.scheduledFor || ''));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const scheduledFor = sanitizeInput(String(req.body?.scheduledFor || ''));
 
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
@@ -798,23 +872,32 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
     scheduledFor: scheduledFor || null,
   });
 
-  await saveReqItem(req, db.items[idx], db);
-  return res.redirect('/agendar');
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/agendar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/agendar');
+    throw err;
+  }
 });
 
 app.post('/agendar/:id/complete', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'agendar');
   if (idx === -1) return res.redirect('/agendar');
 
-  db.items[idx] = updateItem(db.items[idx], {
-    status: 'done',
-    completedAt: new Date().toISOString(),
-    completionComment: null,
-  });
-  await saveReqItem(req, db.items[idx], db);
-  return res.redirect('/agendar');
+    db.items[idx] = updateItem(db.items[idx], {
+      status: 'done',
+      completedAt: new Date().toISOString(),
+      completionComment: null,
+    });
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/agendar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/agendar');
+    throw err;
+  }
 });
 
 app.get('/delegar', async (req, res) => {
@@ -906,7 +989,8 @@ app.get('/desglosar', async (req, res) => {
 });
 
 app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
   const db = await loadReqDb(req);
   const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
   if (idx === -1) return res.redirect('/desglosar');
@@ -915,16 +999,21 @@ app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
   const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
   const objective = sanitizeInput(String(req.body?.objective || current.objective || ''));
 
-  db.items[idx] = updateItem(current, withDesglosarMeta(current, {
-    title,
-    objective,
-  }));
-  await saveReqItem(req, db.items[idx], db);
-  return res.redirect('/desglosar');
+    db.items[idx] = updateItem(current, withDesglosarMeta(current, {
+      title,
+      objective,
+    }));
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
+  }
 });
 
 app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
-  const id = sanitizeInput(String(req.params.id));
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
   const text = sanitizeInput(String(req.body?.subtask || ''));
   if (!text) return res.redirect('/desglosar');
 
@@ -933,15 +1022,20 @@ app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
   if (idx === -1) return res.redirect('/desglosar');
 
   const current = withDesglosarMeta(db.items[idx]);
-  const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
-  db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
-  await saveReqItem(req, db.items[idx], db);
-  return res.redirect('/desglosar');
+    const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
+    db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
+  }
 });
 
 app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const subId = String(req.params.subId);
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const subId = sanitizeIdParam(req.params.subId, sanitizeInput);
   const destination = String(req.body?.destination || '');
   if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.status(400).send('Bad destination');
 
@@ -975,10 +1069,14 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
     await saveReqItem(req, db.items[idx], db);
     await saveReqItem(req, newTask, db);
   } else {
-    db.items = [newTask, ...(db.items || [])];
-    await saveReqDb(req, db);
+      db.items = [newTask, ...(db.items || [])];
+      await saveReqDb(req, db);
+    }
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
   }
-  return res.redirect('/desglosar');
 });
 
 for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar' && x.key !== 'desglosar')) {
@@ -998,11 +1096,16 @@ for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar
 }
 
 app.post('/items/:id/delete', requireApiKey, async (req, res) => {
-  const id = String(req.params.id);
-  const db = await loadReqDb(req);
-  db.items = (db.items || []).filter(i => i.id !== id);
-  await deleteReqItem(req, id, db);
-  return res.redirect('back');
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const db = await loadReqDb(req);
+    db.items = (db.items || []).filter(i => i.id !== id);
+    await deleteReqItem(req, id, db);
+    return res.redirect('back');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('back');
+    throw err;
+  }
 });
 
 app.get('/api/tags', async (req, res) => {
@@ -1029,7 +1132,7 @@ app.get('/export', async (req, res) => {
   });
 });
 
-app.get('/export/json', async (req, res) => {
+app.get('/export/json', exportLimiter, async (req, res) => {
   const db = await loadReqDb(req);
   const exportData = {
     version: 1,
@@ -1042,7 +1145,7 @@ app.get('/export/json', async (req, res) => {
   return res.send(JSON.stringify(exportData, null, 2));
 });
 
-app.get('/export/csv', async (req, res) => {
+app.get('/export/csv', exportLimiter, async (req, res) => {
   const db = await loadReqDb(req);
   const items = db.items || [];
 
@@ -1099,7 +1202,8 @@ app.post('/import', requireApiKey, async (req, res) => {
 });
 
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
-app.get('/metricsz', metricsHandler);
+// SECURITY: /metricsz requires authentication or API key
+app.get('/metricsz', requireApiKey, metricsHandler);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

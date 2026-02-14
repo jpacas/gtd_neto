@@ -62,8 +62,9 @@ test('healthz and csrf-protected collect/import flows', async (t) => {
   const collectGet = await fetch(`${base}/collect`);
   assert.equal(collectGet.status, 200);
   const body = await collectGet.text();
-  const csrfMatch = body.match(/name="_csrf" value="([^"]+)"/);
-  assert.ok(csrfMatch?.[1]);
+  // Match CSRF token more precisely (handle possible escaped quotes)
+  const csrfMatch = body.match(/name="_csrf"\s+value="([a-f0-9]{64})"/);
+  assert.ok(csrfMatch?.[1], 'CSRF token not found in response');
   const csrf = csrfMatch[1];
   const cookie = cookieHeaderFromSetCookie(parseSetCookies(collectGet.headers));
   assert.ok(cookie.includes('csrf_token='));
