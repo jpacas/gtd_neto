@@ -8,7 +8,7 @@ import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import sanitizeHtml from 'sanitize-html';
 
-import { loadDb, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem } from './lib/store.js';
+import { loadDb, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem, findRecentDuplicate } from './lib/store.js';
 import {
   DESTINATIONS,
   destinationByKey,
@@ -298,18 +298,25 @@ function renderPage(res, view, data) {
   const csrfToken = res.locals?.csrfToken || '';
   const cspNonce = res.locals?.cspNonce || '';
   const body = ejs.renderFile(`${viewsPath}/${view}.ejs`, { ...data, csrfToken, cspNonce });
-  return Promise.resolve(body).then(html =>
-    res.render('layout', {
-      title,
-      flash,
-      body: html,
-      useSupabase: USE_SUPABASE,
-      authUser: data?.authUser || res.locals?.authUser || null,
-      csrfToken,
-      cspNonce,
-      hideAppNav: Boolean(data?.hideAppNav),
-    })
-  );
+  return Promise.resolve(body)
+    .then(html =>
+      res.render('layout', {
+        title,
+        flash,
+        body: html,
+        useSupabase: USE_SUPABASE,
+        authUser: data?.authUser || res.locals?.authUser || null,
+        csrfToken,
+        cspNonce,
+        hideAppNav: Boolean(data?.hideAppNav),
+      })
+    )
+    .catch(err => {
+      console.error(`[renderPage] Error rendering view "${view}":`, err);
+      if (!res.headersSent) {
+        res.status(500).send('Error rendering page');
+      }
+    });
 }
 
 app.use(attachAuth);
@@ -402,29 +409,27 @@ app.use((req, res, next) => {
 app.get('/', async (req, res) => {
   const db = await loadReqDb(req);
   const items = db.items || [];
-  const activeByList = new Map();
-  let doneCount = 0;
-  let collectCount = 0;
 
-  for (const item of items) {
+  // Single-pass aggregation
+  const counts = items.reduce((acc, item) => {
     if (item.status === 'done') {
-      doneCount += 1;
-      continue;
+      acc.done += 1;
+    } else {
+      const key = String(item.list || 'collect');
+      acc.byList[key] = (acc.byList[key] || 0) + 1;
     }
-    const key = String(item.list || 'collect');
-    activeByList.set(key, (activeByList.get(key) || 0) + 1);
-    if (key === 'collect') collectCount += 1;
-  }
+    return acc;
+  }, { done: 0, byList: {} });
 
   const cards = [
-    { label: 'Collect', count: collectCount, href: '/collect', hint: 'Captura rápida' },
+    { label: 'Collect', count: counts.byList.collect || 0, href: '/collect', hint: 'Captura rápida' },
     ...DESTINATIONS.map(d => ({
       label: d.label,
-      count: activeByList.get(d.key) || 0,
+      count: counts.byList[d.key] || 0,
       href: `/${d.key}`,
       hint: d.hint,
     })),
-    { label: 'Terminado', count: doneCount, href: '/terminado', hint: 'Historial de completadas' },
+    { label: 'Terminado', count: counts.done, href: '/terminado', hint: 'Historial de completadas' },
   ];
 
   return renderPage(res, 'dashboard', {
@@ -445,47 +450,44 @@ app.get('/stats', async (req, res) => {
   const monthStart = new Date(todayStart);
   monthStart.setDate(monthStart.getDate() - 30);
 
-  const byList = {
-    collect: 0,
-  };
-  DESTINATIONS.forEach(d => { byList[d.key] = 0; });
-
-  const completedPerDay = new Map();
-  let activeCount = 0;
-  let completedCount = 0;
-  let completedToday = 0;
-  let completedWeek = 0;
-  let completedMonth = 0;
-
-  for (const item of items) {
+  // Single-pass aggregation para todas las métricas
+  const result = items.reduce((acc, item) => {
     if (item.status === 'done' && item.completedAt) {
-      completedCount += 1;
+      acc.completedCount += 1;
       const completedDate = new Date(item.completedAt);
       if (!Number.isNaN(completedDate.getTime())) {
-        if (completedDate >= todayStart) completedToday += 1;
-        if (completedDate >= weekStart) completedWeek += 1;
-        if (completedDate >= monthStart) completedMonth += 1;
+        if (completedDate >= todayStart) acc.completedToday += 1;
+        if (completedDate >= weekStart) acc.completedWeek += 1;
+        if (completedDate >= monthStart) acc.completedMonth += 1;
 
         const dayKey = completedDate.toISOString().slice(0, 10);
-        completedPerDay.set(dayKey, (completedPerDay.get(dayKey) || 0) + 1);
+        acc.completedPerDay.set(dayKey, (acc.completedPerDay.get(dayKey) || 0) + 1);
       }
-      continue;
+    } else {
+      acc.activeCount += 1;
+      const list = String(item.list || 'collect');
+      if (Object.prototype.hasOwnProperty.call(acc.byList, list)) {
+        acc.byList[list] += 1;
+      }
     }
-
-    activeCount += 1;
-    const list = String(item.list || 'collect');
-    if (Object.prototype.hasOwnProperty.call(byList, list)) {
-      byList[list] += 1;
-    }
-  }
+    return acc;
+  }, {
+    activeCount: 0,
+    completedCount: 0,
+    completedToday: 0,
+    completedWeek: 0,
+    completedMonth: 0,
+    completedPerDay: new Map(),
+    byList: DESTINATIONS.reduce((acc, d) => ({ ...acc, [d.key]: 0 }), { collect: 0 }),
+  });
 
   const stats = {
     total: items.length,
-    active: activeCount,
-    completed: completedCount,
-    completedToday,
-    completedWeek,
-    completedMonth,
+    active: result.activeCount,
+    completed: result.completedCount,
+    completedToday: result.completedToday,
+    completedWeek: result.completedWeek,
+    completedMonth: result.completedMonth,
   };
 
   // Últimos 7 días de actividad
@@ -493,11 +495,8 @@ app.get('/stats', async (req, res) => {
   for (let i = 6; i >= 0; i--) {
     const date = new Date(todayStart);
     date.setDate(date.getDate() - i);
-    const nextDate = new Date(date);
-    nextDate.setDate(nextDate.getDate() + 1);
-
     const dayKey = date.toISOString().slice(0, 10);
-    const count = completedPerDay.get(dayKey) || 0;
+    const count = result.completedPerDay.get(dayKey) || 0;
 
     last7Days.push({
       date: date.toLocaleDateString('es', { weekday: 'short', day: 'numeric' }),
@@ -511,7 +510,7 @@ app.get('/stats', async (req, res) => {
   return renderPage(res, 'stats', {
     title: 'Estadísticas',
     stats,
-    byList,
+    byList: result.byList,
     last7Days,
     avgPerDay: avgPerDay.toFixed(1),
     maxCount: Math.max(...last7Days.map(d => d.count), 1),
@@ -519,17 +518,22 @@ app.get('/stats', async (req, res) => {
 });
 
 app.get('/collect', async (req, res) => {
-  const db = await loadReqDb(req);
-  const items = (db.items || [])
-    .filter(i => i.list === 'collect' && i.status !== 'done')
-    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  try {
+    const db = await loadReqDb(req);
+    const items = (db.items || [])
+      .filter(i => i.list === 'collect' && i.status !== 'done')
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
-  return renderPage(res, 'collect', {
-    title: 'Collect',
-    items,
-    destinations: DESTINATIONS,
-    needApiKey: Boolean(APP_API_KEY),
-  });
+    return await renderPage(res, 'collect', {
+      title: 'Collect',
+      items,
+      destinations: DESTINATIONS,
+      needApiKey: Boolean(APP_API_KEY),
+    });
+  } catch (err) {
+    console.error('[collect] Error:', err);
+    res.status(500).send('Error loading collect page');
+  }
 });
 
 app.post('/collect/add', requireApiKey, async (req, res) => {
@@ -542,32 +546,32 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
       return res.redirect('/collect');
     }
 
-    const db = await loadReqDb(req);
+    // Guard anti-duplicados: verificar sin cargar toda la DB
+    const recentDuplicate = await findRecentDuplicate(input, { owner: ownerForReq(req) });
 
-  // Guard anti-duplicados: evita doble inserción si llega el mismo texto casi al mismo tiempo
-  const now = Date.now();
-  const recentDuplicate = (db.items || []).find(i =>
-    i.list === 'collect' &&
-    i.status !== 'done' &&
-    String(i.input || '').trim().toLowerCase() === input.toLowerCase() &&
-    Math.abs(now - new Date(i.createdAt || 0).getTime()) < 3000
-  );
-
-  if (recentDuplicate) {
-    if (String(req.get('accept') || '').includes('application/json')) {
-      return res.json({ ok: true, item: recentDuplicate, deduped: true });
+    if (recentDuplicate) {
+      if (String(req.get('accept') || '').includes('application/json')) {
+        return res.json({ ok: true, item: recentDuplicate, deduped: true });
+      }
+      return res.redirect('/collect');
     }
-    return res.redirect('/collect');
-  }
 
-  const item = updateItem(newItem({ input }), {
-    title: input,
-    kind: 'action',
-    list: 'collect',
-    status: 'unprocessed',
-  });
-  db.items = [item, ...(db.items || [])];
-  await saveReqDb(req, db);
+    const item = updateItem(newItem({ input }), {
+      title: input,
+      kind: 'action',
+      list: 'collect',
+      status: 'unprocessed',
+    });
+
+    // En modo Supabase, usar saveItem directamente sin cargar toda la DB
+    if (isStoreSupabaseMode()) {
+      await saveReqItem(req, item);
+    } else {
+      // Modo local: cargar DB, agregar item, guardar
+      const db = await loadReqDb(req);
+      db.items = [item, ...(db.items || [])];
+      await saveReqDb(req, db);
+    }
 
     if (String(req.get('accept') || '').includes('application/json')) {
       return res.json({ ok: true, item, deduped: false });
@@ -575,13 +579,18 @@ app.post('/collect/add', requireApiKey, async (req, res) => {
 
     return res.redirect('/collect');
   } catch (err) {
+    console.error('[/collect/add] Error:', err);
     if (err instanceof RequestValidationError) {
       if (String(req.get('accept') || '').includes('application/json')) {
         return res.status(err.status || 400).json({ ok: false, error: err.message });
       }
       return res.redirect('/collect');
     }
-    throw err;
+    // Handle all other errors
+    if (String(req.get('accept') || '').includes('application/json')) {
+      return res.status(500).json({ ok: false, error: 'Internal server error' });
+    }
+    return res.redirect('/collect');
   }
 });
 
