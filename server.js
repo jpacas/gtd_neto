@@ -1408,22 +1408,6 @@ app.post('/items/:id/delete', requireApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/tags', async (req, res) => {
-  const db = await loadReqDb(req);
-  const allTags = new Set();
-
-  (db.items || []).forEach(item => {
-    if (Array.isArray(item.tags)) {
-      item.tags.forEach(tag => allTags.add(tag));
-    }
-  });
-
-  return res.json({ tags: Array.from(allTags).sort() });
-});
-
-app.get('/search', async (req, res) => {
-  return res.redirect('/');
-});
 
 app.get('/export', async (req, res) => {
   return renderPage(res, 'export', {
