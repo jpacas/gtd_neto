@@ -73,6 +73,7 @@ export function randomId() {
 }
 
 export function withDesglosarMeta(item, patch = {}) {
+  const title = String(patch.title ?? item.title ?? item.input ?? '').trim();
   const objective = String(patch.objective ?? item.objective ?? '').trim();
   const subtasks = Array.isArray(patch.subtasks ?? item.subtasks)
     ? (patch.subtasks ?? item.subtasks)
@@ -80,6 +81,8 @@ export function withDesglosarMeta(item, patch = {}) {
 
   return {
     ...patch,
+    kind: 'project',
+    title,
     objective,
     subtasks,
   };
