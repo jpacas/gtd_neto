@@ -18,7 +18,7 @@ by emulating a browser, search crawler, and analyzing the website's structure an
 
 It will provide you a list of issues as well as suggestions on how to fix them.
 
-## Links 
+## Links
 
 * squirrelscan website is at [https://squirrelscan.com](https://squirrelscan.com)
 * documentation (including rule references) are at [docs.squirrelscan.com](https://docs.squirrelscan.com)
@@ -51,7 +51,7 @@ This skill enables AI agents to audit websites for over 230 rules in 21 categori
 - **Legal**: Compliance with legal requirements, privacy policies, terms of service
 - **Social**: Open graph, twitter cards and validating schemas, snippets etc.
 - **Url Structure**: Length, hyphens, keywords
-- **Keywords**: Keyword stuffing 
+- **Keywords**: Keyword stuffing
 - **Content**: Content structure, headings
 - **Images**: Alt text, color contrast, image size, image format
 - **Local SEO**: NAP consistency, geo metadata
@@ -80,7 +80,7 @@ Use this skill when you need to:
 - Compare site health before/after changes
 - Improve website performance, accessibility, SEO, security and more.
 
-You should re-audit as often as possible to ensure your website remains healthy and performs well. 
+You should re-audit as often as possible to ensure your website remains healthy and performs well.
 
 ## Prerequisites
 
@@ -127,13 +127,13 @@ SECOND SCAN should be a deep scan, which is a thorough and detailed scan of the 
 
 If the user doesn't provide a website to audit, ask which URL they'd like audited.
 
-You should PREFER to audit live websites - only there do we get a TRUE representation of the website and performance or rendering issuers. 
+You should PREFER to audit live websites - only there do we get a TRUE representation of the website and performance or rendering issuers.
 
 If you have both local and live websites to audit, prompt the user to choose which one to audit and SUGGEST they choose live.
 
 You can apply fixes from an audit on the live site against the local code.
 
-When planning scope tasks so they can run concurrently as sub-agents to speed up fixes. 
+When planning scope tasks so they can run concurrently as sub-agents to speed up fixes.
 
 When implementing fixes take advantage of subagents to speed up implementation of fixes.
 
