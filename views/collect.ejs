@@ -62,10 +62,11 @@
         </div>
       <% } %>
 
-      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="destination" value="" />
         <% for (const d of destinations) { %>
-          <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= d.label %></button>
+          <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= d.label %></button>
         <% } %>
       </form>
     </div>
@@ -81,7 +82,7 @@
 
     let isSubmitting = false;
     const csrfToken = '<%= csrfToken %>';
-    const destinationButtons = `<% for (const d of destinations) { %><button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button><% } %>`;
+    const destinationButtons = `<% for (const d of destinations) { %><button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button><% } %>`;
 
     function attachEditHandlers(root = document) {
       root.querySelectorAll('.edit-toggle').forEach((btn) => {
@@ -101,6 +102,25 @@
       });
     }
 
+    function attachSendHandlers(root = document) {
+      root.querySelectorAll('.collect-send-form').forEach((formEl) => {
+        if (formEl.dataset.bound === '1') return;
+        formEl.dataset.bound = '1';
+
+        const hiddenDestination = formEl.querySelector('input[name="destination"]');
+        const buttons = formEl.querySelectorAll('button[data-destination]');
+
+        buttons.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            if (!hiddenDestination) return;
+            hiddenDestination.value = btn.dataset.destination || '';
+            LoadingManager.show(btn);
+            formEl.submit();
+          });
+        });
+      });
+    }
+
     function buildRow(item) {
       const wrapper = document.createElement('div');
       wrapper.className = 'px-3 py-2';
@@ -116,8 +136,9 @@
           <div class="collect-text-row flex-1 min-w-0" data-id="${idAttr}"><span class="text-sm"></span></div>
           <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar" aria-label="Editar actividad">✏️</button>
         </div>
-        <form method="POST" action="/collect/${idUrl}/send" class="mt-1.5 flex flex-wrap items-center gap-1">
+        <form method="POST" action="/collect/${idUrl}/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
           <input type="hidden" name="_csrf" value="${csrfToken}" />
+          <input type="hidden" name="destination" value="" />
           ${destinationButtons}
         </form>
       `;
@@ -172,6 +193,7 @@
         if (list) list.insertBefore(row, list.children[1] || null);
         if (empty) empty.classList.add('hidden');
         attachEditHandlers(row);
+        attachSendHandlers(row);
 
         input.value = '';
         input.focus();
@@ -195,6 +217,7 @@
     });
 
     attachEditHandlers();
+    attachSendHandlers();
     input.focus();
   })();
 </script>
