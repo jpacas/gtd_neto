@@ -9,3 +9,5 @@ node_modules
 
 # compiled assets
 /public/css/styles.css
+.agents/
+.claude/
