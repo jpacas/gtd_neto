@@ -11,66 +11,88 @@
   <link rel="apple-touch-icon" href="/public/icon-192.png" />
   <script nonce="<%= cspNonce %>" src="/public/js/theme.js"></script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-200 bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.08),transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(56,189,248,0.10),transparent_45%)]">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen">
   <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-slate-900 focus:px-3 focus:py-2 focus:rounded">
     Saltar al contenido principal
   </a>
-  <div class="max-w-6xl mx-auto p-4 md:p-6">
-    <div class="flex flex-col gap-3">
-      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div>
-            <h1 class="text-xl md:text-2xl font-semibold dark:text-slate-100">GTD_Neto</h1>
-            <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400">Dashboard general + flujo Collect -> Destino</p>
-          </div>
+
+  <% if (!hideAppNav) { %>
+  <!-- Header sticky -->
+  <header class="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b dark:border-slate-800 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex items-center h-14 gap-2">
+
+        <!-- Logo -->
+        <a href="/" class="text-base font-bold text-slate-900 dark:text-slate-100 shrink-0 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          GTD_Neto
+        </a>
+
+        <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 hidden md:block mx-1"></div>
+
+        <!-- Desktop nav -->
+        <nav class="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto" aria-label="Navegación principal">
+          <a class="nav-link" href="/" data-page="/">🧭 Dashboard</a>
+          <a class="nav-link" href="/collect" data-page="/collect">📥 Collect</a>
+          <a class="nav-link" href="/hacer" data-page="/hacer">✅ Hacer</a>
+          <a class="nav-link" href="/agendar" data-page="/agendar">🗓️ Agendar</a>
+          <a class="nav-link" href="/delegar" data-page="/delegar">🤝 Delegar</a>
+          <a class="nav-link" href="/desglosar" data-page="/desglosar">🧩 Desglosar</a>
+          <a class="nav-link" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
+          <a class="nav-link" href="/terminado" data-page="/terminado">🎯 Terminado</a>
+          <a class="nav-link" href="/stats" data-page="/stats">📈 Stats</a>
+        </nav>
+
+        <!-- Right side: user + theme + hamburger -->
+        <div class="ml-auto flex items-center gap-1 shrink-0">
+          <% if (useSupabase && authUser) { %>
+            <span class="hidden lg:block text-xs text-slate-500 dark:text-slate-400 max-w-[160px] truncate">👤 <%= authUser.email %></span>
+            <form method="POST" action="/auth/logout" class="hidden md:block">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="text-xs px-2 py-1 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-300 transition-colors">🚪 Salir</button>
+            </form>
+          <% } %>
+          <button id="theme-toggle" aria-label="Cambiar tema" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-base leading-none">🌙</button>
+          <button id="nav-hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-nav" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
         </div>
 
-        <% if (!hideAppNav && useSupabase && authUser) { %>
-          <div class="flex items-center gap-2 rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-1.5 self-start md:self-auto">
-            <span class="px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">👤 <%= authUser.email %></span>
+      </div>
+    </div>
+
+    <!-- Mobile nav (collapsible) -->
+    <div id="mobile-nav" class="hidden md:hidden border-t dark:border-slate-800 bg-white dark:bg-slate-900">
+      <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-0.5">
+        <% if (useSupabase && authUser) { %>
+          <div class="flex items-center justify-between py-2 border-b dark:border-slate-800 mb-1">
+            <span class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">👤 <%= authUser.email %></span>
             <form method="POST" action="/auth/logout">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <button class="px-2 py-1 md:px-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700 transition-colors">🚪 Salir</button>
+              <button class="text-xs px-2 py-1 rounded-lg border dark:border-slate-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors">🚪 Salir</button>
             </form>
           </div>
         <% } %>
+        <a class="nav-link-mobile" href="/" data-page="/">🧭 Dashboard</a>
+        <a class="nav-link-mobile" href="/collect" data-page="/collect">📥 Collect</a>
+        <a class="nav-link-mobile" href="/hacer" data-page="/hacer">✅ Hacer</a>
+        <a class="nav-link-mobile" href="/agendar" data-page="/agendar">🗓️ Agendar</a>
+        <a class="nav-link-mobile" href="/delegar" data-page="/delegar">🤝 Delegar</a>
+        <a class="nav-link-mobile" href="/desglosar" data-page="/desglosar">🧩 Desglosar</a>
+        <a class="nav-link-mobile" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
+        <a class="nav-link-mobile" href="/terminado" data-page="/terminado">🎯 Terminado</a>
+        <a class="nav-link-mobile" href="/stats" data-page="/stats">📈 Stats</a>
       </div>
-
-      <% if (!hideAppNav) { %>
-        <nav class="text-xs md:text-sm" aria-label="Navegación principal">
-          <div class="rounded-xl border dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 p-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <div class="flex flex-wrap items-center gap-1.5 rounded-lg border dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-1.5 py-1">
-                <span class="px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">General</span>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 font-medium" href="/" data-page="/">🧭 Dashboard</a>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/stats" data-page="/stats" title="Estadísticas">📈 Estadísticas</a>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-1.5 rounded-lg border dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-1.5 py-1">
-                <span class="px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">Ejecución</span>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/collect" data-page="/collect">📥 Collect</a>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/hacer" data-page="/hacer">✅ Hacer</a>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/agendar" data-page="/agendar">🗓️ Agendar</a>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/delegar" data-page="/delegar">🤝 Delegar</a>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/desglosar" data-page="/desglosar">🧩 Desglosar</a>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-1.5 rounded-lg border dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-1.5 py-1">
-                <span class="px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">Cierre</span>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
-                <a class="nav-link px-2 py-1 md:px-3 rounded-lg bg-white dark:bg-slate-800 border dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" href="/terminado" data-page="/terminado">🎯 Terminado</a>
-              </div>
-            </div>
-          </div>
-        </nav>
-      <% } %>
     </div>
+  </header>
+  <% } %>
+
+  <div class="max-w-6xl mx-auto p-4 md:p-6">
 
     <% if (flash?.error) { %>
-      <div class="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-sm border border-red-200 dark:border-red-800"><%= flash.error %></div>
+      <div class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-sm border border-red-200 dark:border-red-800"><%= flash.error %></div>
     <% } %>
 
-    <main id="main-content" class="mt-6" tabindex="-1">
+    <main id="main-content" class="mt-2" tabindex="-1">
       <%- body %>
     </main>
   </div>
@@ -79,14 +101,24 @@
   <script nonce="<%= cspNonce %>" src="/public/js/toast.js"></script>
   <script nonce="<%= cspNonce %>" src="/public/js/utils.js"></script>
 
-  <!-- Active nav indicator -->
   <script nonce="<%= cspNonce %>">
-    (function() {
+    // Active nav indicator
+    (function () {
       const path = window.location.pathname;
-      document.querySelectorAll('.nav-link').forEach(link => {
-        if (link.dataset.page === path) {
-          link.classList.add('nav-active');
-        }
+      document.querySelectorAll('.nav-link, .nav-link-mobile').forEach(function (link) {
+        if (link.dataset.page === path) link.classList.add('nav-active');
+      });
+    })();
+
+    // Hamburger menu toggle
+    (function () {
+      const hamburger = document.getElementById('nav-hamburger');
+      const mobileNav = document.getElementById('mobile-nav');
+      if (!hamburger || !mobileNav) return;
+      hamburger.addEventListener('click', function () {
+        const isOpen = !mobileNav.classList.contains('hidden');
+        mobileNav.classList.toggle('hidden');
+        hamburger.setAttribute('aria-expanded', String(!isOpen));
       });
     })();
   </script>
@@ -94,26 +126,23 @@
   <!-- PWA Service Worker -->
   <script nonce="<%= cspNonce %>">
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
-          console.log('SW registration failed:', err);
-        });
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
       });
     }
-
   </script>
 
-  <!-- Flash message to toast conversion -->
+  <!-- Flash message to toast -->
   <% if (flash?.error) { %>
     <script nonce="<%= cspNonce %>">
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', function () {
         toast.error(<%- JSON.stringify(String(flash.error || '')) %>);
       });
     </script>
   <% } %>
   <% if (flash?.success) { %>
     <script nonce="<%= cspNonce %>">
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', function () {
         toast.success(<%- JSON.stringify(String(flash.success || '')) %>);
       });
     </script>

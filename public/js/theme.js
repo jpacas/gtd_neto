@@ -44,6 +44,15 @@ class ThemeManager {
   }
 
   createToggle() {
+    // If a toggle button already exists in the DOM (injected by layout), use it
+    const existing = document.getElementById('theme-toggle');
+    if (existing) {
+      existing.innerHTML = this.theme === 'dark' ? '☀️' : '🌙';
+      existing.addEventListener('click', () => { this.toggle(); });
+      return;
+    }
+
+    // Fallback: create floating button (used on pages without main nav)
     const toggleBtn = document.createElement('button');
     toggleBtn.id = 'theme-toggle';
     toggleBtn.className = 'fixed right-4 p-3 rounded-full bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-lg hover:shadow-xl transition-shadow transition-colors z-40';

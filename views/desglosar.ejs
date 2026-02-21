@@ -1,5 +1,5 @@
-<h2 class="text-lg font-semibold">Desglosar</h2>
-<p class="text-sm text-slate-600 mt-1">Convierte proyectos en pasos lógicos y secuenciales.</p>
+<h2 class="text-lg font-semibold dark:text-slate-100">Desglosar</h2>
+<p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Convierte proyectos en pasos lógicos y secuenciales.</p>
 
 <div class="mt-4 space-y-3">
   <% if (!items.length) { %>
@@ -26,141 +26,162 @@
       const doneSubs = allSubs.filter(s => s.status === 'done' || s.status === 'sent').length;
       const openSubs = allSubs.filter(s => s.status === 'open').length;
       const pct = totalSubs > 0 ? Math.round(doneSubs / totalSubs * 100) : 0;
+      const isComplete = pct === 100 && totalSubs > 0;
       const orderedSubs = [
         ...allSubs.filter(s => s.status === 'open'),
         ...allSubs.filter(s => s.status === 'sent'),
         ...allSubs.filter(s => s.status === 'done'),
       ];
+      const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝' };
     %>
-    <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
-      <form method="POST" action="/desglosar/<%= it.id %>/update" class="space-y-2">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-        <div>
-          <label class="text-xs text-slate-500">Proyecto (desde Collect)</label>
-          <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-lg px-2.5 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
+    <details class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl overflow-hidden group" <%= isComplete ? '' : 'open' %>>
+      <!-- Summary: always visible, click to expand/collapse -->
+      <summary class="flex items-center gap-3 px-4 py-3 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors list-none">
+        <span class="text-slate-400 dark:text-slate-500 group-open:rotate-90 transition-transform duration-200 text-xs">▶</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm dark:text-slate-100 truncate"><%= it.title || it.input %></div>
+          <% if (totalSubs > 0) { %>
+            <div class="flex items-center gap-2 mt-1">
+              <div class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 max-w-[160px]">
+                <div class="bg-blue-500 h-1.5 rounded-full transition-all desglosar-progress" data-pct="<%= pct %>"></div>
+              </div>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0"><%= doneSubs %>/<%= totalSubs %> · <%= pct %>%</span>
+            </div>
+          <% } else { %>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">Sin subtareas</span>
+          <% } %>
         </div>
+        <% if (isComplete) { %>
+          <span class="text-[11px] text-green-600 dark:text-green-400 font-medium shrink-0">Completo ✓</span>
+        <% } %>
+      </summary>
 
-        <div>
-          <label class="text-xs text-slate-500">Objetivo / Definición de finalizado</label>
-          <textarea name="objective" rows="2" class="w-full border rounded-lg px-2.5 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" placeholder="¿Cómo se ve este proyecto cuando está terminado?"><%= it.objective || '' %></textarea>
-        </div>
+      <!-- Expandable content -->
+      <div class="px-4 pb-4 border-t dark:border-slate-700 pt-3 space-y-3">
 
-        <button class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Guardar proyecto</button>
-      </form>
-
-      <% if (totalSubs > 0) { %>
-        <div class="mt-3">
-          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <span><%= doneSubs %>/<%= totalSubs %> subtareas completadas</span>
-            <span><%= pct %>%</span>
-          </div>
-          <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
-            <div class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: <%= pct %>%"></div>
-          </div>
-        </div>
-      <% } %>
-
-      <div class="mt-3 border-t dark:border-slate-700 pt-3">
-        <div class="text-xs text-slate-500 mb-1">Subactividades</div>
-
-        <form method="POST" action="/desglosar/<%= it.id %>/subtasks/add" class="flex gap-2 items-center mb-2">
+        <!-- Title + Objective form -->
+        <form method="POST" action="/desglosar/<%= it.id %>/update" class="space-y-2">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <input type="text" name="subtask" class="flex-1 border rounded-lg px-2.5 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" placeholder="Ej: Definir 3 entregables" />
-          <button class="text-sm px-3 py-2 rounded-lg border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-600">Agregar</button>
+          <div>
+            <label class="text-xs text-slate-500 dark:text-slate-400">Proyecto (desde Collect)</label>
+            <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-lg px-2.5 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 mt-0.5" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 dark:text-slate-400">Objetivo / Definición de finalizado</label>
+            <textarea name="objective" rows="2" class="w-full border rounded-lg px-2.5 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 mt-0.5" placeholder="¿Cómo se ve este proyecto cuando está terminado?"><%= it.objective || '' %></textarea>
+          </div>
+          <button class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">Guardar proyecto</button>
         </form>
 
-        <div class="space-y-1.5">
-          <% for (const s of orderedSubs) { %>
-            <div class="border rounded-lg dark:border-slate-600 <%= s.status === 'sent' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : s.status === 'done' ? 'bg-slate-50 dark:bg-slate-700/50' : '' %>">
-              <%# View row %>
-              <div class="subtask-view-<%= s.id %> px-2.5 py-2 flex items-center gap-2">
-                <div class="flex-1 text-sm <%= s.status === 'done' ? 'line-through text-slate-400 dark:text-slate-500' : 'dark:text-slate-200' %>"><%= s.text %></div>
-                <div class="flex items-center gap-1 flex-shrink-0">
-                  <% if (s.status === 'sent') { %>
-                    <span class="text-xs text-green-700 dark:text-green-400">Enviado a <%= s.sentTo %> ✓</span>
-                  <% } else if (s.status === 'done') { %>
-                    <span class="text-xs text-slate-500 dark:text-slate-400">Hecho ✓</span>
-                  <% } else { %>
-                    <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/complete" class="inline">
+        <!-- Subtasks section -->
+        <div class="border-t dark:border-slate-700 pt-3">
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Subactividades</div>
+
+          <form method="POST" action="/desglosar/<%= it.id %>/subtasks/add" class="flex gap-2 items-center mb-3">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="text" name="subtask" class="flex-1 border rounded-lg px-2.5 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" placeholder="Ej: Definir 3 entregables" />
+            <button class="text-sm px-3 py-2 rounded-lg border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Agregar</button>
+          </form>
+
+          <div class="space-y-1.5">
+            <% for (const s of orderedSubs) { %>
+              <div class="border rounded-lg dark:border-slate-600 <%= s.status === 'sent' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : s.status === 'done' ? 'bg-slate-50 dark:bg-slate-700/50' : '' %>">
+                <%# View row %>
+                <div class="subtask-view-<%= s.id %> px-2.5 py-2 flex items-center gap-2">
+                  <div class="flex-1 text-sm min-w-0 break-words <%= s.status === 'done' ? 'line-through text-slate-400 dark:text-slate-500' : 'dark:text-slate-200' %>"><%= s.text %></div>
+                  <div class="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                    <% if (s.status === 'sent') { %>
+                      <span class="text-xs text-green-700 dark:text-green-400">Enviado a <%= s.sentTo %> ✓</span>
+                    <% } else if (s.status === 'done') { %>
+                      <span class="text-xs text-slate-500 dark:text-slate-400">Hecho ✓</span>
+                    <% } else { %>
+                      <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/complete" class="inline">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                        <button class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 hover:bg-green-50 dark:hover:bg-green-900/30 text-green-700 border-green-300 transition-colors">✓ Hecho</button>
+                      </form>
+                      <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/send" class="inline flex gap-1 items-center flex-wrap">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                        <% for (const d of destinations) { %>
+                          <button type="submit" name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"><%= destIcons[d.key] || '' %> <%= d.label %></button>
+                        <% } %>
+                      </form>
+                    <% } %>
+                    <% if (s.status !== 'sent') { %>
+                      <button
+                        type="button"
+                        onclick="toggleSubtaskEdit('<%= it.id %>', '<%= s.id %>')"
+                        class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                        title="Editar">✏️</button>
+                    <% } %>
+                    <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/delete" class="inline subtask-delete-form-<%= s.id %>">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                      <button class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 hover:bg-green-50 dark:hover:bg-green-900/30 text-green-700 border-green-300">✓ Hecho</button>
+                      <button
+                        type="button"
+                        onclick="confirmSubtaskDelete('<%= s.id %>')"
+                        class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 border-red-200 transition-colors"
+                        title="Eliminar">×</button>
                     </form>
-                    <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/send" class="inline flex gap-1 items-center">
-                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                      <% for (const d of destinations) { %>
-                        <button name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600">A <%= d.label %></button>
-                      <% } %>
-                    </form>
-                  <% } %>
-                  <% if (s.status !== 'sent') { %>
-                    <button
-                      type="button"
-                      onclick="toggleSubtaskEdit('<%= it.id %>', '<%= s.id %>')"
-                      class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
-                      title="Editar">✏️</button>
-                  <% } %>
-                  <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/delete" class="inline subtask-delete-form-<%= s.id %>">
+                  </div>
+                </div>
+                <%# Edit row (hidden by default) %>
+                <div class="subtask-edit-<%= it.id %>-<%= s.id %> hidden px-2.5 py-2 border-t dark:border-slate-600">
+                  <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/update" class="flex gap-2 items-center">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <input
+                      type="text"
+                      name="subtaskText"
+                      value="<%= s.text %>"
+                      class="subtask-edit-input-<%= s.id %> flex-1 border rounded-lg px-2.5 py-1.5 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+                    />
+                    <button class="text-[11px] px-2 py-1.5 rounded border bg-blue-600 text-white hover:bg-blue-700 transition-colors">Guardar</button>
                     <button
                       type="button"
-                      onclick="confirmSubtaskDelete('<%= s.id %>')"
-                      class="text-[11px] px-2 py-1 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 border-red-200"
-                      title="Eliminar">×</button>
+                      onclick="cancelSubtaskEdit('<%= it.id %>', '<%= s.id %>')"
+                      class="text-[11px] px-2 py-1.5 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">Cancelar</button>
                   </form>
                 </div>
               </div>
-              <%# Edit row (hidden by default) %>
-              <div class="subtask-edit-<%= it.id %>-<%= s.id %> hidden px-2.5 py-2">
-                <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/update" class="flex gap-2 items-center">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                  <input
-                    type="text"
-                    name="subtaskText"
-                    value="<%= s.text %>"
-                    class="subtask-edit-input-<%= s.id %> flex-1 border rounded-lg px-2.5 py-1.5 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  />
-                  <button class="text-[11px] px-2 py-1.5 rounded border bg-blue-600 text-white hover:bg-blue-700">Guardar</button>
-                  <button
-                    type="button"
-                    onclick="cancelSubtaskEdit('<%= it.id %>', '<%= s.id %>')"
-                    class="text-[11px] px-2 py-1.5 rounded border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50">Cancelar</button>
-                </form>
-              </div>
-            </div>
-          <% } %>
+            <% } %>
+          </div>
         </div>
-      </div>
 
-      <div class="mt-3 border-t dark:border-slate-700 pt-3">
-        <form method="POST" action="/desglosar/<%= it.id %>/complete" class="project-complete-form-<%= it.id %>">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button
-            type="button"
-            onclick="confirmProjectComplete('<%= it.id %>', <%= openSubs %>)"
-            class="text-sm px-3 py-1.5 rounded-lg border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 hover:bg-green-50 dark:hover:bg-green-900/30 text-green-700 border-green-300">
-            Proyecto completado<% if (openSubs > 0) { %> (<%= openSubs %> pendiente<%= openSubs !== 1 ? 's' : '' %>)<% } %>
-          </button>
-        </form>
+        <!-- Complete project button -->
+        <div class="border-t dark:border-slate-700 pt-3">
+          <form method="POST" action="/desglosar/<%= it.id %>/complete" class="project-complete-form-<%= it.id %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button
+              type="button"
+              onclick="confirmProjectComplete('<%= it.id %>', <%= openSubs %>)"
+              class="text-sm px-3 py-1.5 rounded-lg border bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 hover:bg-green-50 dark:hover:bg-green-900/30 text-green-700 border-green-300 transition-colors">
+              🎯 Proyecto completado<% if (openSubs > 0) { %> (<%= openSubs %> pendiente<%= openSubs !== 1 ? 's' : '' %>)<% } %>
+            </button>
+          </form>
+        </div>
+
       </div>
-    </div>
+    </details>
   <% } %>
 </div>
 
 <script nonce="<%= cspNonce %>">
+// Set progress bar widths via JS to avoid CSP inline style violation
+document.querySelectorAll('.desglosar-progress').forEach(function(el) {
+  el.style.width = (el.dataset.pct || '0') + '%';
+});
+
 function toggleSubtaskEdit(projectId, subId) {
-  const viewRow = document.querySelector('.subtask-view-' + subId);
-  const editRow = document.querySelector('.subtask-edit-' + projectId + '-' + subId);
+  var viewRow = document.querySelector('.subtask-view-' + subId);
+  var editRow = document.querySelector('.subtask-edit-' + projectId + '-' + subId);
   if (!viewRow || !editRow) return;
   viewRow.classList.add('hidden');
   editRow.classList.remove('hidden');
-  const input = editRow.querySelector('.subtask-edit-input-' + subId);
+  var input = editRow.querySelector('.subtask-edit-input-' + subId);
   if (input) input.focus();
 }
 
 function cancelSubtaskEdit(projectId, subId) {
-  const viewRow = document.querySelector('.subtask-view-' + subId);
-  const editRow = document.querySelector('.subtask-edit-' + projectId + '-' + subId);
+  var viewRow = document.querySelector('.subtask-view-' + subId);
+  var editRow = document.querySelector('.subtask-edit-' + projectId + '-' + subId);
   if (!viewRow || !editRow) return;
   editRow.classList.add('hidden');
   viewRow.classList.remove('hidden');
@@ -168,17 +189,17 @@ function cancelSubtaskEdit(projectId, subId) {
 
 function confirmSubtaskDelete(subId) {
   confirmAction('¿Eliminar esta subactividad?', function() {
-    const form = document.querySelector('.subtask-delete-form-' + subId);
+    var form = document.querySelector('.subtask-delete-form-' + subId);
     if (form) form.submit();
   });
 }
 
 function confirmProjectComplete(projectId, openCount) {
-  const msg = openCount > 0
+  var msg = openCount > 0
     ? '¿Marcar el proyecto como completado? Quedan ' + openCount + ' subtarea' + (openCount !== 1 ? 's' : '') + ' pendiente' + (openCount !== 1 ? 's' : '') + '.'
     : '¿Marcar el proyecto como completado?';
   confirmAction(msg, function() {
-    const form = document.querySelector('.project-complete-form-' + projectId);
+    var form = document.querySelector('.project-complete-form-' + projectId);
     if (form) form.submit();
   });
 }

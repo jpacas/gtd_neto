@@ -65,8 +65,9 @@
       <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="destination" value="" />
+        <% const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' }; %>
         <% for (const d of destinations) { %>
-          <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= d.label %></button>
+          <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= destIcons[d.key] || '' %> <%= d.label %></button>
         <% } %>
       </form>
     </div>
@@ -82,7 +83,8 @@
 
     let isSubmitting = false;
     const csrfToken = '<%= csrfToken %>';
-    const destinationButtons = `<% for (const d of destinations) { %><button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= d.label %></button><% } %>`;
+    const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' };
+    const destinationButtons = `<% for (const d of destinations) { %><button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50">${destIcons['<%= d.key %>'] || ''} <%= d.label %></button><% } %>`;
 
     function attachEditHandlers(root = document) {
       root.querySelectorAll('.edit-toggle').forEach((btn) => {

@@ -49,6 +49,24 @@
   .input-base {
     @apply w-full border rounded-lg px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900;
   }
+
+  /* Navigation */
+  .nav-link {
+    @apply px-2.5 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors whitespace-nowrap;
+  }
+
+  .nav-link-mobile {
+    @apply flex items-center px-3 py-2.5 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors;
+  }
+
+  .nav-active {
+    @apply bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium;
+  }
+
+  /* Empty states */
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center py-10 px-4;
+  }
 }
 
 /* Animaciones personalizadas */

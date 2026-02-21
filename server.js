@@ -1248,7 +1248,7 @@ app.post('/desglosar/:id/update', requireApiKey, async (req, res) => {
       const current = withDesglosarMeta(currentRaw);
       const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
       const objective = sanitizeInput(String(req.body?.objective || current.objective || ''));
-      const next = updateItem(current, withDesglosarMeta(current, { title, objective }));
+      const next = updateItem(currentRaw, withDesglosarMeta(currentRaw, { title, objective }));
       await saveReqItem(req, next);
       return res.redirect('/desglosar');
     }
@@ -1284,7 +1284,7 @@ app.post('/desglosar/:id/subtasks/add', requireApiKey, async (req, res) => {
       if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
       const current = withDesglosarMeta(currentRaw);
       const subtasks = [...(current.subtasks || []), { id: randomId(), text, status: 'open' }];
-      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      const next = updateItem(currentRaw, withDesglosarMeta(currentRaw, { subtasks }));
       await saveReqItem(req, next);
       return res.redirect('/desglosar');
     }
@@ -1336,7 +1336,7 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
       if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
 
       subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
-      const updatedProject = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      const updatedProject = updateItem(currentRaw, withDesglosarMeta(currentRaw, { subtasks }));
       await saveReqItem(req, updatedProject);
       await saveReqItem(req, newTask);
       return res.redirect('/desglosar');
@@ -1390,7 +1390,7 @@ app.post('/desglosar/:id/subtasks/:subId/complete', requireApiKey, async (req, r
       const subIdx = subtasks.findIndex(s => String(s.id) === subId);
       if (subIdx === -1) return res.redirect('/desglosar');
       subtasks[subIdx] = { ...subtasks[subIdx], status: 'done', completedAt: new Date().toISOString() };
-      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      const next = updateItem(currentRaw, withDesglosarMeta(currentRaw, { subtasks }));
       await saveReqItem(req, next);
       return res.redirect('/desglosar');
     }
@@ -1429,7 +1429,7 @@ app.post('/desglosar/:id/subtasks/:subId/update', requireApiKey, async (req, res
       if (subIdx === -1) return res.redirect('/desglosar');
       if (subtasks[subIdx].status === 'sent') return res.redirect('/desglosar');
       subtasks[subIdx] = { ...subtasks[subIdx], text };
-      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      const next = updateItem(currentRaw, withDesglosarMeta(currentRaw, { subtasks }));
       await saveReqItem(req, next);
       return res.redirect('/desglosar');
     }
@@ -1462,7 +1462,7 @@ app.post('/desglosar/:id/subtasks/:subId/delete', requireApiKey, async (req, res
       if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
       const current = withDesglosarMeta(currentRaw);
       const subtasks = (current.subtasks || []).filter(s => String(s.id) !== subId);
-      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      const next = updateItem(currentRaw, withDesglosarMeta(currentRaw, { subtasks }));
       await saveReqItem(req, next);
       return res.redirect('/desglosar');
     }
