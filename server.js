@@ -1377,6 +1377,134 @@ app.post('/desglosar/:id/subtasks/:subId/send', requireApiKey, async (req, res) 
   }
 });
 
+app.post('/desglosar/:id/subtasks/:subId/complete', requireApiKey, async (req, res) => {
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const subId = sanitizeIdParam(req.params.subId, sanitizeInput);
+
+    if (isStoreSupabaseMode()) {
+      const currentRaw = await loadReqItemById(req, id);
+      if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
+      const current = withDesglosarMeta(currentRaw);
+      const subtasks = [...(current.subtasks || [])];
+      const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+      if (subIdx === -1) return res.redirect('/desglosar');
+      subtasks[subIdx] = { ...subtasks[subIdx], status: 'done', completedAt: new Date().toISOString() };
+      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      await saveReqItem(req, next);
+      return res.redirect('/desglosar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+    const current = withDesglosarMeta(db.items[idx]);
+    const subtasks = [...(current.subtasks || [])];
+    const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+    if (subIdx === -1) return res.redirect('/desglosar');
+    subtasks[subIdx] = { ...subtasks[subIdx], status: 'done', completedAt: new Date().toISOString() };
+    db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
+  }
+});
+
+app.post('/desglosar/:id/subtasks/:subId/update', requireApiKey, async (req, res) => {
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const subId = sanitizeIdParam(req.params.subId, sanitizeInput);
+    const raw = req.body?.subtaskText;
+    const text = sanitizeInput(String(raw || '')).trim();
+    if (!text || text.length > 280) return res.redirect('/desglosar');
+
+    if (isStoreSupabaseMode()) {
+      const currentRaw = await loadReqItemById(req, id);
+      if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
+      const current = withDesglosarMeta(currentRaw);
+      const subtasks = [...(current.subtasks || [])];
+      const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+      if (subIdx === -1) return res.redirect('/desglosar');
+      if (subtasks[subIdx].status === 'sent') return res.redirect('/desglosar');
+      subtasks[subIdx] = { ...subtasks[subIdx], text };
+      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      await saveReqItem(req, next);
+      return res.redirect('/desglosar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+    const current = withDesglosarMeta(db.items[idx]);
+    const subtasks = [...(current.subtasks || [])];
+    const subIdx = subtasks.findIndex(s => String(s.id) === subId);
+    if (subIdx === -1) return res.redirect('/desglosar');
+    if (subtasks[subIdx].status === 'sent') return res.redirect('/desglosar');
+    subtasks[subIdx] = { ...subtasks[subIdx], text };
+    db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
+  }
+});
+
+app.post('/desglosar/:id/subtasks/:subId/delete', requireApiKey, async (req, res) => {
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+    const subId = sanitizeIdParam(req.params.subId, sanitizeInput);
+
+    if (isStoreSupabaseMode()) {
+      const currentRaw = await loadReqItemById(req, id);
+      if (!currentRaw || currentRaw.list !== 'desglosar') return res.redirect('/desglosar');
+      const current = withDesglosarMeta(currentRaw);
+      const subtasks = (current.subtasks || []).filter(s => String(s.id) !== subId);
+      const next = updateItem(current, withDesglosarMeta(current, { subtasks }));
+      await saveReqItem(req, next);
+      return res.redirect('/desglosar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+    const current = withDesglosarMeta(db.items[idx]);
+    const subtasks = (current.subtasks || []).filter(s => String(s.id) !== subId);
+    db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
+  }
+});
+
+app.post('/desglosar/:id/complete', requireApiKey, async (req, res) => {
+  try {
+    const id = sanitizeIdParam(req.params.id, sanitizeInput);
+
+    if (isStoreSupabaseMode()) {
+      const current = await loadReqItemById(req, id);
+      if (!current || current.list !== 'desglosar') return res.redirect('/desglosar');
+      const next = updateItem(current, { status: 'done', completedAt: new Date().toISOString() });
+      await saveReqItem(req, next);
+      return res.redirect('/desglosar');
+    }
+
+    const db = await loadReqDb(req);
+    const idx = (db.items || []).findIndex(i => i.id === id && i.list === 'desglosar');
+    if (idx === -1) return res.redirect('/desglosar');
+    db.items[idx] = updateItem(db.items[idx], { status: 'done', completedAt: new Date().toISOString() });
+    await saveReqItem(req, db.items[idx], db);
+    return res.redirect('/desglosar');
+  } catch (err) {
+    if (err instanceof RequestValidationError) return res.redirect('/desglosar');
+    throw err;
+  }
+});
+
 for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar' && x.key !== 'delegar' && x.key !== 'desglosar')) {
   app.get(`/${d.key}`, async (req, res) => {
     const items = (await loadReqItemsByList(req, d.key, { excludeDone: true }))

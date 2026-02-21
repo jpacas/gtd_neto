@@ -22,7 +22,7 @@ const IMPORT_ALLOWED_ITEM_KEYS = new Set([
   'completedAt', 'completionComment', 'scheduledFor', 'delegatedTo', 'delegatedFor',
   'objective', 'subtasks', 'sourceProjectId', 'sourceSubtaskId', 'tags',
 ]);
-const IMPORT_ALLOWED_SUBTASK_KEYS = new Set(['id', 'text', 'status', 'sentTo', 'sentItemId']);
+const IMPORT_ALLOWED_SUBTASK_KEYS = new Set(['id', 'text', 'status', 'sentTo', 'sentItemId', 'completedAt']);
 
 function toSanitizedString(value, maxLen, sanitizeInput, { nullable = true } = {}) {
   if (value == null) return nullable ? null : '';
@@ -74,11 +74,12 @@ function normalizeImportedSubtasks(rawSubtasks, sanitizeInput) {
     const id = toSanitizedString(subtask.id, 64, sanitizeInput, { nullable: false });
     const text = toSanitizedString(subtask.text, 280, sanitizeInput, { nullable: false });
     const status = toSanitizedString(subtask.status, 16, sanitizeInput, { nullable: false });
-    if (!['open', 'sent'].includes(status)) throw new Error(`subtasks[${idx}].status must be open|sent`);
+    if (!['open', 'sent', 'done'].includes(status)) throw new Error(`subtasks[${idx}].status must be open|sent|done`);
 
     const sentTo = toSanitizedString(subtask.sentTo, 32, sanitizeInput);
     const sentItemId = toSanitizedString(subtask.sentItemId, 64, sanitizeInput);
-    return { id, text, status, sentTo, sentItemId };
+    const completedAt = toIsoDate(subtask.completedAt);
+    return { id, text, status, sentTo, sentItemId, completedAt };
   });
 }
 
