@@ -1227,7 +1227,7 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
 
 app.get('/desglosar', async (req, res) => {
   const items = (await loadReqItemsByList(req, 'desglosar', { excludeDone: true }))
-    .map(i => withDesglosarMeta(i))
+    .map(i => ({ ...i, ...withDesglosarMeta(i) }))
     .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
 
   return renderPage(res, 'desglosar', {
