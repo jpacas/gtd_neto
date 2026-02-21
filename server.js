@@ -1520,6 +1520,7 @@ for (const d of DESTINATIONS.filter(x => x.key !== 'hacer' && x.key !== 'agendar
 }
 
 app.post('/items/:id/delete', requireApiKey, async (req, res) => {
+  const wantsJson = String(req.get('accept') || '').includes('application/json');
   try {
     const id = sanitizeIdParam(req.params.id, sanitizeInput);
     if (isStoreSupabaseMode()) {
@@ -1529,9 +1530,13 @@ app.post('/items/:id/delete', requireApiKey, async (req, res) => {
       db.items = (db.items || []).filter(i => i.id !== id);
       await deleteReqItem(req, id, db);
     }
+    if (wantsJson) return res.json({ ok: true });
     return res.redirect('back');
   } catch (err) {
-    if (err instanceof RequestValidationError) return res.redirect('back');
+    if (err instanceof RequestValidationError) {
+      if (wantsJson) return res.status(400).json({ ok: false, error: err.message });
+      return res.redirect('back');
+    }
     throw err;
   }
 });

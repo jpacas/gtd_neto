@@ -51,7 +51,10 @@
           <span class="text-sm"><%= it.title || it.input %></span>
         </div>
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar" aria-label="Editar actividad">✏️</button>
+        <div class="flex items-center gap-1 shrink-0">
+          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar" aria-label="Editar actividad">✏️</button>
+          <button type="button" class="text-slate-400 hover:text-red-500 delete-btn" data-id="<%= it.id %>" title="Borrar" aria-label="Borrar actividad">🗑️</button>
+        </div>
       </div>
 
       <% if (it.tags && it.tags.length > 0) { %>
@@ -85,6 +88,11 @@
     const csrfToken = '<%= csrfToken %>';
     const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' };
     const destinationButtons = `<% for (const d of destinations) { %><button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50">${destIcons['<%= d.key %>'] || ''} <%= d.label %></button><% } %>`;
+
+    function makeTempId() {
+      const bytes = crypto.getRandomValues(new Uint8Array(8));
+      return 'tmp_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     function attachEditHandlers(root = document) {
       root.querySelectorAll('.edit-toggle').forEach((btn) => {
@@ -123,9 +131,60 @@
       });
     }
 
-    function buildRow(item) {
+    function attachDeleteHandlers(root = document) {
+      root.querySelectorAll('.delete-btn').forEach((btn) => {
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          if (!id || id.startsWith('tmp_')) return; // pending items can't be deleted yet
+          const list = document.getElementById('collectList');
+          const empty = document.getElementById('collectEmpty');
+          const row = btn.closest('.px-3.py-2');
+          if (!row) return;
+
+          // Optimistic: animate and remove
+          const sibling = row.nextSibling;
+          row.style.transition = 'opacity 0.2s, transform 0.2s';
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(-16px)';
+          await new Promise(r => setTimeout(r, 220));
+          row.remove();
+
+          const visibleRows = list ? list.querySelectorAll('.collect-text-row:not(.hidden), .optimistic-pending') : [];
+          if (!visibleRows.length && empty) empty.classList.remove('hidden');
+
+          try {
+            const body = new URLSearchParams({ _csrf: csrfToken });
+            const r = await fetch(`/items/${encodeURIComponent(id)}/delete`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+              },
+              body,
+            });
+            if (!r.ok) {
+              let msg = 'server_error';
+              try { const d = await r.json(); msg = d?.error || msg; } catch {}
+              throw new Error(msg + ' (' + r.status + ')');
+            }
+          } catch (err) {
+            // Rollback: re-insert the row
+            row.style.opacity = '';
+            row.style.transform = '';
+            if (list) list.insertBefore(row, sibling);
+            if (empty) empty.classList.add('hidden');
+            toast.error('No se pudo borrar el item. ' + (err?.message || ''));
+          }
+        });
+      });
+    }
+
+    function buildRow(item, pending = false) {
       const wrapper = document.createElement('div');
-      wrapper.className = 'px-3 py-2';
+      wrapper.className = 'px-3 py-2' + (pending ? ' optimistic-pending opacity-60' : '');
+      if (pending) wrapper.style.position = 'relative';
       const idAttr = String(item.id || '').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
       const idUrl = encodeURIComponent(String(item.id || ''));
       wrapper.innerHTML = `
@@ -136,7 +195,10 @@
             <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
           </form>
           <div class="collect-text-row flex-1 min-w-0" data-id="${idAttr}"><span class="text-sm"></span></div>
-          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar" aria-label="Editar actividad">✏️</button>
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar" aria-label="Editar actividad">✏️</button>
+            <button type="button" class="text-slate-400 hover:text-red-500 delete-btn" data-id="${idAttr}" title="Borrar" aria-label="Borrar actividad">🗑️</button>
+          </div>
         </div>
         <form method="POST" action="/collect/${idUrl}/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
           <input type="hidden" name="_csrf" value="${csrfToken}" />
@@ -147,7 +209,33 @@
       const val = item.title || item.input || '';
       wrapper.querySelector('.collect-text-row span').textContent = val;
       wrapper.querySelector('.collect-edit-form input[name="input"]').value = val;
+
+      if (pending) {
+        const spinnerEl = document.createElement('span');
+        spinnerEl.className = 'opt-spinner absolute right-2 top-2 text-slate-400 text-xs pointer-events-none';
+        spinnerEl.setAttribute('aria-hidden', 'true');
+        spinnerEl.textContent = '⏳';
+        wrapper.appendChild(spinnerEl);
+      }
+
       return wrapper;
+    }
+
+    function finalizeRow(row, realItem) {
+      const realId = String(realItem.id || '');
+      const realIdEnc = encodeURIComponent(realId);
+
+      row.querySelectorAll('form[action]').forEach(f => {
+        f.action = f.action.replace(/collect\/tmp_[a-f0-9]+\//, 'collect/' + realIdEnc + '/');
+      });
+
+      row.querySelectorAll('[data-id^="tmp_"]').forEach(el => {
+        el.dataset.id = realId;
+      });
+
+      row.classList.remove('opacity-60', 'optimistic-pending');
+      const spinner = row.querySelector('.opt-spinner');
+      if (spinner) spinner.remove();
     }
 
     async function submitQuick() {
@@ -155,11 +243,30 @@
       if (!text || isSubmitting) return;
 
       isSubmitting = true;
-      LoadingManager.show(addBtn);
 
+      // Snapshot FormData and body BEFORE clearing input
       const formData = new FormData(form);
       const body = new URLSearchParams();
       for (const [k, v] of formData.entries()) body.append(k, v);
+      const savedText = text;
+
+      // Build and insert optimistic row immediately
+      const tempId = makeTempId();
+      const list = document.getElementById('collectList');
+      const empty = document.getElementById('collectEmpty');
+      const optimisticItem = { id: tempId, title: savedText };
+      const row = buildRow(optimisticItem, true);
+      row.classList.add('fade-in');
+      if (list) list.insertBefore(row, list.children[1] || null);
+      if (empty) empty.classList.add('hidden');
+      attachEditHandlers(row);
+      attachSendHandlers(row);
+      attachDeleteHandlers(row);
+
+      // Unblock the user immediately
+      input.value = '';
+      input.focus();
+      isSubmitting = false;
 
       try {
         const r = await fetch('/collect/add', {
@@ -181,31 +288,33 @@
         }
 
         if (data.deduped) {
-          input.value = '';
-          input.focus();
+          // Remove optimistic row — item already exists
+          row.style.transition = 'opacity 0.25s, transform 0.25s';
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(-16px)';
+          setTimeout(() => row.remove(), 280);
           toast.info('Ese item ya estaba en Collect');
           return;
         }
+
         if (!data?.item) throw new Error('bad_payload');
 
-        const list = document.getElementById('collectList');
-        const empty = document.getElementById('collectEmpty');
-        const row = buildRow(data.item);
-        row.classList.add('fade-in');
-        if (list) list.insertBefore(row, list.children[1] || null);
-        if (empty) empty.classList.add('hidden');
-        attachEditHandlers(row);
-        attachSendHandlers(row);
-
-        input.value = '';
-        input.focus();
-        toast.success('Item agregado correctamente');
+        finalizeRow(row, data.item);
       } catch (err) {
+        // Rollback: animate row out and restore input
+        row.style.transition = 'opacity 0.25s, transform 0.25s';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-16px)';
+        setTimeout(() => {
+          row.remove();
+          const visibleRows = list ? list.querySelectorAll('.optimistic-pending, .collect-text-row:not(.hidden)') : [];
+          if (!visibleRows.length && empty) empty.classList.remove('hidden');
+        }, 280);
+
+        input.value = savedText;
+        input.focus();
         const msg = String(err?.message || 'No se pudo guardar el item.');
         toast.error(msg);
-      } finally {
-        isSubmitting = false;
-        LoadingManager.hide(addBtn);
       }
     }
 
@@ -220,6 +329,7 @@
 
     attachEditHandlers();
     attachSendHandlers();
+    attachDeleteHandlers();
     input.focus();
   })();
 </script>
