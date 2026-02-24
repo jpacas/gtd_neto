@@ -43,10 +43,9 @@
           <a class="nav-link" href="/stats" data-page="/stats">📈 Stats</a>
         </nav>
 
-        <!-- Right side: user + theme + hamburger -->
+        <!-- Right side: logout + hamburger -->
         <div class="ml-auto flex items-center gap-1 shrink-0">
           <% if (useSupabase && authUser) { %>
-            <span class="hidden lg:block text-xs text-slate-500 max-w-[160px] truncate">👤 <%= authUser.email %></span>
             <form method="POST" action="/auth/logout" class="hidden md:block">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button class="text-xs px-2 py-1 rounded-lg border border-slate-300 bg-white hover:bg-amber-50 text-amber-700 transition-colors">🚪 Salir</button>
@@ -64,8 +63,7 @@
     <div id="mobile-nav" class="hidden md:hidden border-t border-slate-200 bg-white">
       <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-0.5">
         <% if (useSupabase && authUser) { %>
-          <div class="flex items-center justify-between py-2 border-b border-slate-200 mb-1">
-            <span class="text-xs text-slate-500 truncate max-w-[200px]">👤 <%= authUser.email %></span>
+          <div class="flex items-center justify-end py-2 border-b border-slate-200 mb-1">
             <form method="POST" action="/auth/logout">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button class="text-xs px-2 py-1 rounded-lg border border-slate-300 text-amber-700 hover:bg-amber-50 transition-colors">🚪 Salir</button>
