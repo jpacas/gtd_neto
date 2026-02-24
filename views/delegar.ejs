@@ -10,7 +10,7 @@
   <div class="mt-4 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">Completa responsable y fecha antes de guardar.</div>
 <% } %>
 
-<form method="GET" action="/delegar" id="delegarFilters" class="mt-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 flex flex-wrap items-end gap-2 <%= items.length < 3 ? 'hidden' : '' %>">
+<form method="GET" action="/delegar" id="delegarFilters" class="mt-4 bg-white border rounded-xl p-3 flex flex-wrap items-end gap-2 <%= items.length < 3 ? 'hidden' : '' %>">
   <div>
     <label class="text-xs text-slate-500">Agrupar por</label>
     <select name="groupBy" class="block border rounded-lg px-2 py-1.5 text-sm auto-submit-filter">
@@ -26,11 +26,11 @@
 
 <div class="mt-4 space-y-3">
   <% if (!items.length) { %>
-    <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl overflow-hidden">
+    <div class="bg-white border rounded-xl overflow-hidden">
       <div class="empty-state m-4">
         <div class="text-4xl mb-3">🤝</div>
-        <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Sin tareas delegadas</div>
-        <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        <div class="text-base font-semibold text-slate-700 mb-2">Sin tareas delegadas</div>
+        <div class="text-sm text-slate-600 mb-4">
           Tareas asignadas a otras personas aparecerán aquí.<br/>
           Puedes agruparlas por fecha o responsable.
         </div>

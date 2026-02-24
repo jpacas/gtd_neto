@@ -1,7 +1,7 @@
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
   <div class="flex-1">
-    <h2 class="text-lg font-semibold dark:text-slate-100">Hacer</h2>
-    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Vista compacta de acciones &lt;10 min, ordenadas por urgencia y luego importancia.</p>
+    <h2 class="text-lg font-semibold">Hacer</h2>
+    <p class="text-sm text-slate-600 mt-1">Vista compacta de acciones &lt;10 min, ordenadas por urgencia y luego importancia.</p>
     <details class="mt-2">
       <summary class="text-xs text-blue-600 cursor-pointer hover:underline">ℹ️ ¿Cómo se calcula la accionabilidad?</summary>
       <div class="mt-1 text-xs text-slate-600 bg-slate-50 p-2 rounded">
@@ -17,16 +17,16 @@
     </details>
   </div>
   <div class="flex gap-2 items-center flex-wrap">
-    <span class="text-xs text-slate-500 dark:text-slate-400">Filtrar:</span>
-    <button onclick="filterByUrgency(event, 0)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">Todos</button>
-    <button onclick="filterByUrgency(event, 5)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">🔴 Urgente (5)</button>
-    <button onclick="filterByUrgency(event, 4)" class="text-xs px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors filter-btn">🟡 Alta (4)</button>
-    <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Ir a Collect</a>
+    <span class="text-xs text-slate-500">Filtrar:</span>
+    <button onclick="filterByUrgency(event, 0)" class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-100 transition-colors filter-btn">Todos</button>
+    <button onclick="filterByUrgency(event, 5)" class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-100 transition-colors filter-btn">🔴 Urgente (5)</button>
+    <button onclick="filterByUrgency(event, 4)" class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-100 transition-colors filter-btn">🟡 Alta (4)</button>
+    <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-100 transition-colors">Ir a Collect</a>
   </div>
 </div>
 
-<div class="mt-4 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden" id="hacerList">
-  <div class="px-3 py-1.5 border-b bg-slate-50 dark:bg-slate-800/60 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+<div class="mt-4 rounded-xl border bg-white overflow-hidden" id="hacerList">
+  <div class="px-3 py-1.5 border-b bg-slate-50 text-[11px] text-slate-500 flex items-center gap-2">
     <span class="w-8 text-center" title="Urgencia (1-5)">U</span>
     <span class="w-8 text-center" title="Importancia (1-5)">I</span>
     <span>Actividad</span>
@@ -34,8 +34,8 @@
   <% if (!items.length) { %>
     <div class="empty-state m-4">
       <div class="text-4xl mb-3">✅</div>
-      <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">No hay acciones pendientes</div>
-      <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+      <div class="text-base font-semibold text-slate-700 mb-2">No hay acciones pendientes</div>
+      <div class="text-sm text-slate-600 mb-4">
         Las acciones rápidas (&lt;10 minutos) aparecerán aquí.<br/>
         Organiza tus tareas desde Collect para empezar.
       </div>
@@ -53,17 +53,17 @@
       const importanceVal = it.importance || 3;
       const priorityScore = urgencyVal * importanceVal;
       let borderClass = '';
-      let bgClass = it.actionableOk ? '' : 'bg-red-50 dark:bg-red-900/10';
+      let bgClass = it.actionableOk ? '' : 'bg-red-50';
 
       if (priorityScore >= 20) {
-        borderClass = 'border-l-4 border-red-500 dark:border-red-400';
-        bgClass = 'bg-red-50/50 dark:bg-red-900/20';
+        borderClass = 'border-l-4 border-red-500';
+        bgClass = 'bg-red-50/50';
       } else if (priorityScore >= 12) {
-        borderClass = 'border-l-4 border-orange-500 dark:border-orange-400';
-        bgClass = 'bg-orange-50/50 dark:bg-orange-900/20';
+        borderClass = 'border-l-4 border-orange-500';
+        bgClass = 'bg-orange-50/50';
       } else if (priorityScore >= 6) {
-        borderClass = 'border-l-4 border-yellow-500 dark:border-yellow-400';
-        bgClass = 'bg-yellow-50/30 dark:bg-yellow-900/10';
+        borderClass = 'border-l-4 border-yellow-500';
+        bgClass = 'bg-yellow-50/30';
       }
     %>
     <div class="px-3 py-2 border-b last:border-b-0 <%= borderClass %> <%= bgClass %> hover:bg-opacity-75 transition-colors item-card" data-urgency="<%= urgencyVal %>">
@@ -95,12 +95,12 @@
           <span class="text-sm break-words min-w-0 flex-1"><%= it.title || it.input %></span>
         </form>
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar texto" aria-label="Editar texto de actividad">✏️</button>
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle shrink-0" data-id="<%= it.id %>" title="Editar texto" aria-label="Editar texto de actividad">✏️</button>
 
-        <form method="POST" action="/hacer/<%= it.id %>/complete" class="hacer-complete-form">
+        <form method="POST" action="/hacer/<%= it.id %>/complete" class="hacer-complete-form shrink-0">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <input type="hidden" name="comment" value="" />
-          <button type="button" class="text-[11px] px-2 py-1 rounded border bg-emerald-50 text-emerald-700 hover:bg-emerald-100 finalize-btn">Finalizada</button>
+          <button type="button" class="text-xs px-3 py-1.5 rounded border bg-emerald-50 text-emerald-700 hover:bg-emerald-100 finalize-btn whitespace-nowrap">Finalizada</button>
         </form>
       </div>
 

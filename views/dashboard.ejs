@@ -1,37 +1,37 @@
-<h2 class="text-lg font-semibold dark:text-slate-100">Dashboard</h2>
-<p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Vista general de todas las secciones del flujo GTD simplificado.</p>
+<h2 class="text-lg font-semibold">Dashboard</h2>
+<p class="text-sm text-slate-600 mt-1">Vista general de todas las secciones del flujo GTD simplificado.</p>
 
 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
   <% for (const c of cards) { %>
-    <a href="<%= c.href %>" class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-      <div class="text-sm text-slate-600 dark:text-slate-400"><%= c.label %></div>
-      <div class="text-2xl font-semibold mt-1 dark:text-slate-100"><%= c.count %></div>
-      <% if (c.hint) { %><div class="text-xs text-slate-500 dark:text-slate-500 mt-1"><%= c.hint %></div><% } %>
+    <a href="<%= c.href %>" class="bg-white border rounded-xl p-4 hover:bg-slate-50 transition-colors hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+      <div class="text-sm text-slate-600"><%= c.label %></div>
+      <div class="text-2xl font-semibold mt-1"><%= c.count %></div>
+      <% if (c.hint) { %><div class="text-xs text-slate-500 mt-1"><%= c.hint %></div><% } %>
     </a>
   <% } %>
 </div>
 
-<div class="mt-6 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5">
-  <h3 class="text-base font-semibold dark:text-slate-100">Flujo actual</h3>
-  <ol class="mt-2 list-decimal ml-5 text-sm text-slate-700 dark:text-slate-300 space-y-1">
+<div class="mt-6 bg-white border rounded-xl p-5">
+  <h3 class="text-base font-semibold">Flujo actual</h3>
+  <ol class="mt-2 list-decimal ml-5 text-sm text-slate-700 space-y-1">
     <li>Capturar en Collect.</li>
     <li>Asignar destino: Hacer / Agendar / Delegar / Desglosar / No hacer.</li>
     <li>Revisar cada sección desde el Dashboard.</li>
   </ol>
 </div>
 
-<div class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+<div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
   <div class="flex items-start gap-3">
     <div class="text-2xl">⌨️</div>
     <div class="flex-1">
-      <h3 class="text-sm font-semibold text-blue-900 dark:text-blue-100">Atajos de teclado disponibles</h3>
-      <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">
-        Navega más rápido usando atajos de teclado. Presiona <kbd class="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800 font-mono text-[10px]">?</kbd> para ver todos los atajos disponibles.
+      <h3 class="text-sm font-semibold text-blue-900">Atajos de teclado disponibles</h3>
+      <p class="text-xs text-blue-700 mt-1">
+        Navega más rápido usando atajos de teclado. Presiona <kbd class="px-1.5 py-0.5 rounded bg-blue-100 font-mono text-[10px]">?</kbd> para ver todos los atajos disponibles.
       </p>
       <div class="mt-2 flex flex-wrap gap-2 text-xs">
-        <span class="text-blue-600 dark:text-blue-400"><kbd class="px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-800 font-mono">g</kbd>+<kbd class="px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-800 font-mono">h</kbd> Hacer</span>
-        <span class="text-blue-600 dark:text-blue-400"><kbd class="px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-800 font-mono">g</kbd>+<kbd class="px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-800 font-mono">c</kbd> Collect</span>
-        <span class="text-blue-600 dark:text-blue-400"><kbd class="px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-800 font-mono">/</kbd> Buscar</span>
+        <span class="text-blue-600"><kbd class="px-1 py-0.5 rounded bg-blue-100 font-mono">g</kbd>+<kbd class="px-1 py-0.5 rounded bg-blue-100 font-mono">h</kbd> Hacer</span>
+        <span class="text-blue-600"><kbd class="px-1 py-0.5 rounded bg-blue-100 font-mono">g</kbd>+<kbd class="px-1 py-0.5 rounded bg-blue-100 font-mono">c</kbd> Collect</span>
+        <span class="text-blue-600"><kbd class="px-1 py-0.5 rounded bg-blue-100 font-mono">/</kbd> Buscar</span>
       </div>
     </div>
   </div>

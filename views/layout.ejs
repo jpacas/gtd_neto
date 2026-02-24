@@ -11,25 +11,24 @@
   <link rel="apple-touch-icon" href="/public/icon-192.png" />
   <!-- Toastify CSS -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  <script nonce="<%= cspNonce %>" src="/public/js/theme.js"></script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen">
+<body class="bg-slate-50 text-slate-900 min-h-screen">
   <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-slate-900 focus:px-3 focus:py-2 focus:rounded">
     Saltar al contenido principal
   </a>
 
   <% if (!hideAppNav) { %>
   <!-- Header sticky -->
-  <header class="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b dark:border-slate-800 shadow-sm">
+  <header class="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex items-center h-14 gap-2">
 
         <!-- Logo -->
-        <a href="/" class="text-base font-bold text-slate-900 dark:text-slate-100 shrink-0 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        <a href="/" class="text-base font-bold text-slate-900 shrink-0 hover:text-blue-600 transition-colors">
           GTD_Neto
         </a>
 
-        <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 hidden md:block mx-1"></div>
+        <div class="w-px h-5 bg-slate-200 shrink-0 hidden md:block mx-1"></div>
 
         <!-- Desktop nav -->
         <nav class="hidden md:flex items-center gap-0.5 flex-1 overflow-x-hidden" aria-label="Navegación principal">
@@ -47,15 +46,13 @@
         <!-- Right side: user + theme + hamburger -->
         <div class="ml-auto flex items-center gap-1 shrink-0">
           <% if (useSupabase && authUser) { %>
-            <span class="hidden lg:block text-xs text-slate-500 dark:text-slate-400 max-w-[160px] truncate">👤 <%= authUser.email %></span>
+            <span class="hidden lg:block text-xs text-slate-500 max-w-[160px] truncate">👤 <%= authUser.email %></span>
             <form method="POST" action="/auth/logout" class="hidden md:block">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <button class="text-xs px-2 py-1 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-300 transition-colors">🚪 Salir</button>
+              <button class="text-xs px-2 py-1 rounded-lg border border-slate-300 bg-white hover:bg-amber-50 text-amber-700 transition-colors">🚪 Salir</button>
             </form>
           <% } %>
-          <button id="hotkeys-help" aria-label="Ver atajos de teclado" title="Atajos de teclado (?)" class="hidden md:block p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-base leading-none">⌨️</button>
-          <button id="theme-toggle" aria-label="Cambiar tema" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-base leading-none">🌙</button>
-          <button id="nav-hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-nav" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <button id="nav-hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-nav" class="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
         </div>
@@ -64,14 +61,14 @@
     </div>
 
     <!-- Mobile nav (collapsible) -->
-    <div id="mobile-nav" class="hidden md:hidden border-t dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div id="mobile-nav" class="hidden md:hidden border-t border-slate-200 bg-white">
       <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-0.5">
         <% if (useSupabase && authUser) { %>
-          <div class="flex items-center justify-between py-2 border-b dark:border-slate-800 mb-1">
-            <span class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">👤 <%= authUser.email %></span>
+          <div class="flex items-center justify-between py-2 border-b border-slate-200 mb-1">
+            <span class="text-xs text-slate-500 truncate max-w-[200px]">👤 <%= authUser.email %></span>
             <form method="POST" action="/auth/logout">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <button class="text-xs px-2 py-1 rounded-lg border dark:border-slate-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors">🚪 Salir</button>
+              <button class="text-xs px-2 py-1 rounded-lg border border-slate-300 text-amber-700 hover:bg-amber-50 transition-colors">🚪 Salir</button>
             </form>
           </div>
         <% } %>
@@ -92,7 +89,7 @@
   <div class="max-w-6xl mx-auto p-4 md:p-6">
 
     <% if (flash?.error) { %>
-      <div class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-sm border border-red-200 dark:border-red-800"><%= flash.error %></div>
+      <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-800 text-sm border border-red-200"><%= flash.error %></div>
     <% } %>
 
     <main id="main-content" class="mt-2" tabindex="-1">
@@ -131,18 +128,6 @@
         mobileNav.classList.toggle('hidden');
         hamburger.setAttribute('aria-expanded', String(!isOpen));
       });
-    })();
-
-    // Hotkeys help button
-    (function () {
-      const helpBtn = document.getElementById('hotkeys-help');
-      if (helpBtn) {
-        helpBtn.addEventListener('click', function () {
-          // Trigger the help modal (implemented in hotkeys.js)
-          const event = new KeyboardEvent('keydown', { key: '?' });
-          document.dispatchEvent(event);
-        });
-      }
     })();
   </script>
 

@@ -1,50 +1,50 @@
 <div class="mb-6">
-  <h2 class="text-lg font-semibold dark:text-slate-100">📊 Estadísticas de Productividad</h2>
-  <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Resumen de tu actividad y progreso</p>
+  <h2 class="text-lg font-semibold">📊 Estadísticas de Productividad</h2>
+  <p class="text-sm text-slate-600 mt-1">Resumen de tu actividad y progreso</p>
 </div>
 
 <!-- Métricas principales -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-  <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
-    <div class="text-xs text-slate-600 dark:text-slate-400">Total Items</div>
-    <div class="text-2xl font-bold mt-1 dark:text-slate-100"><%= stats.total %></div>
+  <div class="bg-white border rounded-xl p-4">
+    <div class="text-xs text-slate-600">Total Items</div>
+    <div class="text-2xl font-bold mt-1"><%= stats.total %></div>
   </div>
-  <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
-    <div class="text-xs text-slate-600 dark:text-slate-400">Activos</div>
-    <div class="text-2xl font-bold mt-1 text-blue-600 dark:text-blue-400"><%= stats.active %></div>
+  <div class="bg-white border rounded-xl p-4">
+    <div class="text-xs text-slate-600">Activos</div>
+    <div class="text-2xl font-bold mt-1 text-blue-600"><%= stats.active %></div>
   </div>
-  <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
-    <div class="text-xs text-slate-600 dark:text-slate-400">Completados</div>
-    <div class="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400"><%= stats.completed %></div>
+  <div class="bg-white border rounded-xl p-4">
+    <div class="text-xs text-slate-600">Completados</div>
+    <div class="text-2xl font-bold mt-1 text-emerald-600"><%= stats.completed %></div>
   </div>
-  <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
-    <div class="text-xs text-slate-600 dark:text-slate-400">Promedio/día</div>
-    <div class="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400"><%= avgPerDay %></div>
+  <div class="bg-white border rounded-xl p-4">
+    <div class="text-xs text-slate-600">Promedio/día</div>
+    <div class="text-2xl font-bold mt-1 text-amber-600"><%= avgPerDay %></div>
   </div>
 </div>
 
 <!-- Completados por período -->
-<div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 mb-6">
-  <h3 class="text-base font-semibold mb-4 dark:text-slate-100">✅ Items Completados</h3>
+<div class="bg-white border rounded-xl p-5 mb-6">
+  <h3 class="text-base font-semibold mb-4">✅ Items Completados</h3>
   <div class="grid grid-cols-3 gap-4">
     <div class="text-center">
-      <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400"><%= stats.completedToday %></div>
-      <div class="text-xs text-slate-600 dark:text-slate-400 mt-1">Hoy</div>
+      <div class="text-3xl font-bold text-emerald-600"><%= stats.completedToday %></div>
+      <div class="text-xs text-slate-600 mt-1">Hoy</div>
     </div>
     <div class="text-center">
-      <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400"><%= stats.completedWeek %></div>
-      <div class="text-xs text-slate-600 dark:text-slate-400 mt-1">Esta semana</div>
+      <div class="text-3xl font-bold text-emerald-600"><%= stats.completedWeek %></div>
+      <div class="text-xs text-slate-600 mt-1">Esta semana</div>
     </div>
     <div class="text-center">
-      <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400"><%= stats.completedMonth %></div>
-      <div class="text-xs text-slate-600 dark:text-slate-400 mt-1">Este mes</div>
+      <div class="text-3xl font-bold text-emerald-600"><%= stats.completedMonth %></div>
+      <div class="text-xs text-slate-600 mt-1">Este mes</div>
     </div>
   </div>
 </div>
 
 <!-- Gráfico de últimos 7 días -->
-<div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 mb-6">
-  <h3 class="text-base font-semibold mb-4 dark:text-slate-100">📈 Actividad (Últimos 7 días)</h3>
+<div class="bg-white border rounded-xl p-5 mb-6">
+  <h3 class="text-base font-semibold mb-4">📈 Actividad (Últimos 7 días)</h3>
   <div class="flex items-end justify-between gap-2 h-40">
     <% last7Days.forEach(day => {
       const percentage = maxCount > 0 ? (day.count / maxCount) * 100 : 0;
@@ -53,20 +53,20 @@
     %>
       <div class="flex-1 flex flex-col items-center gap-2">
         <svg viewBox="0 0 100 100" class="w-full h-28" aria-hidden="true">
-          <rect x="20" y="<%= y %>" width="60" height="<%= barHeight %>" rx="4" class="fill-blue-200 dark:fill-blue-900"></rect>
+          <rect x="20" y="<%= y %>" width="60" height="<%= barHeight %>" rx="4" class="fill-blue-200"></rect>
           <% if (day.count > 0) { %>
-            <text x="50" y="<%= Math.max(14, y + 12) %>" text-anchor="middle" class="fill-blue-900 dark:fill-blue-100 text-[10px] font-semibold"><%= day.count %></text>
+            <text x="50" y="<%= Math.max(14, y + 12) %>" text-anchor="middle" class="fill-blue-900 text-[10px] font-semibold"><%= day.count %></text>
           <% } %>
         </svg>
-        <div class="text-[10px] text-slate-600 dark:text-slate-400 text-center"><%= day.date %></div>
+        <div class="text-[10px] text-slate-600 text-center"><%= day.date %></div>
       </div>
     <% }); %>
   </div>
 </div>
 
 <!-- Items por lista -->
-<div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5">
-  <h3 class="text-base font-semibold mb-4 dark:text-slate-100">📋 Distribución por Lista</h3>
+<div class="bg-white border rounded-xl p-5">
+  <h3 class="text-base font-semibold mb-4">📋 Distribución por Lista</h3>
   <div class="space-y-3">
     <%
       const listLabels = {
@@ -87,9 +87,9 @@
       <div>
         <div class="flex items-center justify-between text-sm mb-1">
           <span class="dark:text-slate-100"><%= listLabels[listKey] || listKey %></span>
-          <span class="font-semibold dark:text-slate-100"><%= count %></span>
+          <span class="font-semibold"><%= count %></span>
         </div>
-        <progress class="w-full h-2 rounded [&::-webkit-progress-bar]:rounded [&::-webkit-progress-value]:rounded [&::-moz-progress-bar]:rounded [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-blue-600 dark:[&::-webkit-progress-bar]:bg-slate-700 dark:[&::-webkit-progress-value]:bg-blue-500 dark:[&::-moz-progress-bar]:bg-blue-500" max="100" value="<%= Math.max(0, Math.min(100, Math.round(percentage))) %>"></progress>
+        <progress class="w-full h-2 rounded [&::-webkit-progress-bar]:rounded [&::-webkit-progress-value]:rounded [&::-moz-progress-bar]:rounded [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-blue-600[&::-webkit-progress-bar]:bg-slate-700[&::-webkit-progress-value]:bg-blue-500[&::-moz-progress-bar]:bg-blue-500" max="100" value="<%= Math.max(0, Math.min(100, Math.round(percentage))) %>"></progress>
       </div>
     <% }); %>
   </div>
@@ -97,7 +97,7 @@
 
 <!-- Botones de acción -->
 <div class="mt-6 flex flex-wrap gap-2">
-  <a href="/" class="px-4 py-2 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm">
+  <a href="/" class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-50 transition-colors text-sm">
     ← Volver al Dashboard
   </a>
   <a href="/export" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm">
