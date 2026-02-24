@@ -1,0 +1,165 @@
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+  <div class="flex-1">
+    <h2 class="text-lg font-semibold flex items-center gap-2">
+      <span>🌅</span>
+      <span>Hoy</span>
+    </h2>
+    <p class="text-sm text-slate-600 mt-1"><%= todayFormatted %></p>
+  </div>
+  <div class="flex gap-2 items-center">
+    <div class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white">
+      ⏱️ Tiempo total: <strong><%= totalEstimateMin %> min</strong>
+    </div>
+  </div>
+</div>
+
+<!-- Tareas Urgentes -->
+<% if (hacerItems.length > 0) { %>
+<div class="mb-6">
+  <h3 class="text-base font-semibold mb-3 flex items-center gap-2">
+    <span>🔥</span>
+    <span>Urgente (hacer primero)</span>
+    <span class="text-xs text-slate-500 font-normal">(<%= hacerItems.length %> tareas)</span>
+  </h3>
+
+  <div class="space-y-2">
+    <% for (const it of hacerItems) { %>
+      <%
+        const urgencyVal = it.urgency || 3;
+        const importanceVal = it.importance || 3;
+        const priorityScore = it.priorityScore || (urgencyVal * importanceVal);
+        let borderClass = '';
+        let bgClass = '';
+        let badgeClass = '';
+        let badgeText = '';
+
+        if (priorityScore >= 20) {
+          borderClass = 'border-l-4 border-red-500';
+          bgClass = 'bg-red-50/50';
+          badgeClass = 'bg-red-100 text-red-700 border-red-200';
+          badgeText = '🔴 CRÍTICO';
+        } else if (priorityScore >= 12) {
+          borderClass = 'border-l-4 border-orange-500';
+          bgClass = 'bg-orange-50/50';
+          badgeClass = 'bg-orange-100 text-orange-700 border-orange-200';
+          badgeText = '🟠 ALTA';
+        }
+      %>
+      <div class="bg-white border rounded-lg <%= borderClass %> <%= bgClass %> p-3 hover:shadow-md transition-all">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs px-2 py-0.5 rounded border font-semibold <%= badgeClass %>"><%= badgeText %></span>
+              <% if (it.estimateMin) { %>
+                <span class="text-xs text-slate-500">⏱️ <%= it.estimateMin %> min</span>
+              <% } %>
+            </div>
+            <div class="text-sm font-medium text-slate-900"><%= it.title || it.input %></div>
+            <div class="text-xs text-slate-500 mt-1">
+              Urgencia: <%= urgencyVal %>/5 · Importancia: <%= importanceVal %>/5
+            </div>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <a href="/hacer" class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 transition-colors">
+              Ver en Hacer →
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>
+<% } else { %>
+<div class="mb-6 bg-white border rounded-lg p-6 text-center">
+  <div class="text-4xl mb-2">✅</div>
+  <div class="text-sm text-slate-600">No hay tareas urgentes pendientes</div>
+</div>
+<% } %>
+
+<!-- Tareas Agendadas -->
+<% if (agendarItems.length > 0) { %>
+<div class="mb-6">
+  <h3 class="text-base font-semibold mb-3 flex items-center gap-2">
+    <span>📅</span>
+    <span>Agendadas (próximos 3 días)</span>
+    <span class="text-xs text-slate-500 font-normal">(<%= agendarItems.length %> tareas)</span>
+  </h3>
+
+  <div class="space-y-2">
+    <% for (const it of agendarItems) { %>
+      <div class="bg-white border rounded-lg p-3 hover:shadow-md transition-all <%= it.isToday ? 'border-l-4 border-blue-500 bg-blue-50/30' : '' %>">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs px-2 py-0.5 rounded border <%= it.isToday ? 'bg-blue-100 text-blue-700 border-blue-200' : it.isTomorrow ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-700 border-slate-200' %>">
+                <%= it.isToday ? '🔵 HOY' : it.isTomorrow ? '🟡 MAÑANA' : '📆 ' + it.dueDateFormatted %>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-900"><%= it.title || it.input %></div>
+            <% if (it.notes) { %>
+              <div class="text-xs text-slate-500 mt-1"><%= it.notes %></div>
+            <% } %>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <a href="/agendar" class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 transition-colors">
+              Ver en Agendar →
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<!-- Delegaciones Pendientes -->
+<% if (delegarItems.length > 0) { %>
+<div class="mb-6">
+  <h3 class="text-base font-semibold mb-3 flex items-center gap-2">
+    <span>⏳</span>
+    <span>Seguimiento pendiente</span>
+    <span class="text-xs text-slate-500 font-normal">(<%= delegarItems.length %> delegaciones)</span>
+  </h3>
+
+  <div class="space-y-2">
+    <% for (const it of delegarItems) { %>
+      <div class="bg-white border rounded-lg p-3 hover:shadow-md transition-all border-l-4 border-amber-500 bg-amber-50/30">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs px-2 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-200">
+                ⚠️ <%= it.daysWaiting %> día<%= it.daysWaiting === 1 ? '' : 's' %> esperando
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-900"><%= it.title || it.input %></div>
+            <% if (it.delegateTo) { %>
+              <div class="text-xs text-slate-500 mt-1">Delegado a: <%= it.delegateTo %></div>
+            <% } %>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <a href="/delegar" class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 transition-colors">
+              Ver en Delegar →
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<!-- Quick Actions -->
+<div class="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4">
+  <h3 class="text-sm font-semibold mb-3 text-slate-700">⚡ Acciones rápidas</h3>
+  <div class="flex flex-wrap gap-2">
+    <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition-colors">
+      📥 Ir a Collect
+    </a>
+    <a href="/hacer" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition-colors">
+      ✅ Ver todas (Hacer)
+    </a>
+    <a href="/agendar" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition-colors">
+      🗓️ Ver agenda completa
+    </a>
+  </div>
+</div>

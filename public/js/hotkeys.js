@@ -9,6 +9,7 @@
   const HOTKEYS = {
     // Navigation
     'g d': () => navigateTo('/'),           // Go to Dashboard
+    'g t': () => navigateTo('/hoy'),        // Go to Hoy (T for Today)
     'g c': () => navigateTo('/collect'),    // Go to Collect
     'g h': () => navigateTo('/hacer'),      // Go to Hacer
     'g a': () => navigateTo('/agendar'),    // Go to Agendar
@@ -149,9 +150,9 @@
   function showHotkeyHelp() {
     const helpHTML = `
       <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="hotkey-help">
-        <div class="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-2xl max-h-screen overflow-y-auto">
+        <div class="bg-white bg-white rounded-lg p-6 max-w-2xl max-h-screen overflow-y-auto">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">⌨️ Atajos de Teclado</h2>
+            <h2 class="text-2xl font-bold text-slate-900 text-slate-900">⌨️ Atajos de Teclado</h2>
             <button onclick="document.getElementById('hotkey-help').remove()"
                     class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
               ✕
@@ -160,34 +161,35 @@
 
           <div class="space-y-4">
             <div>
-              <h3 class="font-semibold text-lg mb-2 text-slate-900 dark:text-slate-100">Navegación (presiona dos teclas)</h3>
+              <h3 class="font-semibold text-lg mb-2 text-slate-900">Navegación (presiona dos teclas)</h3>
               <div class="grid grid-cols-2 gap-2 text-sm">
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">d</kbd> = Dashboard</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">c</kbd> = Collect</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">h</kbd> = Hacer</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">a</kbd> = Agendar</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">l</kbd> = Delegar</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">p</kbd> = Desglosar</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">d</kbd> = Dashboard</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">t</kbd> = Hoy</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">c</kbd> = Collect</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">h</kbd> = Hacer</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">a</kbd> = Agendar</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">l</kbd> = Delegar</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 rounded">g</kbd> + <kbd class="px-2 py-1 bg-slate-100 rounded">p</kbd> = Desglosar</div>
               </div>
             </div>
 
             <div>
-              <h3 class="font-semibold text-lg mb-2 text-slate-900 dark:text-slate-100">Mover Tareas (Ctrl/⌘ + tecla)</h3>
+              <h3 class="font-semibold text-lg mb-2 text-slate-900 text-slate-900">Mover Tareas (Ctrl/⌘ + tecla)</h3>
               <div class="grid grid-cols-2 gap-2 text-sm">
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">Ctrl+H</kbd> = Mover a Hacer</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">Ctrl+A</kbd> = Mover a Agendar</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">Ctrl+D</kbd> = Mover a Delegar</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">Ctrl+P</kbd> = Mover a Desglosar</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">Ctrl+N</kbd> = Mover a No hacer</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">Ctrl+H</kbd> = Mover a Hacer</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">Ctrl+A</kbd> = Mover a Agendar</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">Ctrl+D</kbd> = Mover a Delegar</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">Ctrl+P</kbd> = Mover a Desglosar</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">Ctrl+N</kbd> = Mover a No hacer</div>
               </div>
             </div>
 
             <div>
-              <h3 class="font-semibold text-lg mb-2 text-slate-900 dark:text-slate-100">Otras Acciones</h3>
+              <h3 class="font-semibold text-lg mb-2 text-slate-900 text-slate-900">Otras Acciones</h3>
               <div class="grid grid-cols-2 gap-2 text-sm">
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">/</kbd> = Enfocar input</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">Ctrl+K</kbd> = Búsqueda (próximo)</div>
-                <div><kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">?</kbd> = Mostrar esta ayuda</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">/</kbd> = Enfocar input</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">Ctrl+K</kbd> = Búsqueda (próximo)</div>
+                <div><kbd class="px-2 py-1 bg-slate-100 bg-slate-100 rounded">?</kbd> = Mostrar esta ayuda</div>
               </div>
             </div>
           </div>

@@ -735,6 +735,82 @@ app.get('/stats', async (req, res) => {
   });
 });
 
+// Vista "Hoy" - Next Actions consolidadas
+app.get('/hoy', async (req, res) => {
+  const db = await loadReqDb(req);
+  const items = db.items || [];
+
+  // Tareas urgentes e importantes de "Hacer" (score >= 12)
+  const hacerItems = items
+    .filter(i => i.list === 'hacer' && i.status !== 'done')
+    .map(i => ({ ...i, ...withHacerMeta(i) }))
+    .map(i => {
+      const urgency = Number(i.urgency || 3);
+      const importance = Number(i.importance || 3);
+      const priorityScore = urgency * importance;
+      return { ...i, priorityScore };
+    })
+    .filter(i => i.priorityScore >= 12)
+    .sort((a, b) => b.priorityScore - a.priorityScore)
+    .slice(0, 10);
+
+  // Tareas agendadas (próximos 3 días)
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const threeDaysLater = new Date(todayStart);
+  threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+
+  const agendarItems = items
+    .filter(i => i.list === 'agendar' && i.status !== 'done' && i.dueDate)
+    .map(i => {
+      const dueDate = new Date(i.dueDate);
+      return { ...i, dueDate, dueDateObj: dueDate };
+    })
+    .filter(i => !Number.isNaN(i.dueDateObj.getTime()) && i.dueDateObj <= threeDaysLater)
+    .sort((a, b) => a.dueDateObj - b.dueDateObj)
+    .map(i => ({
+      ...i,
+      dueDateFormatted: i.dueDateObj.toLocaleDateString('es', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      }),
+      isToday: i.dueDateObj.toDateString() === todayStart.toDateString(),
+      isTomorrow: i.dueDateObj.toDateString() === new Date(todayStart.getTime() + 86400000).toDateString(),
+    }));
+
+  // Delegaciones pendientes de seguimiento (más de 2 días)
+  const twoDaysAgo = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000));
+  const delegarItems = items
+    .filter(i => i.list === 'delegar' && i.status !== 'done')
+    .map(i => {
+      const movedAt = i.movedToListAt ? new Date(i.movedToListAt) : null;
+      return { ...i, movedAt };
+    })
+    .filter(i => i.movedAt && i.movedAt < twoDaysAgo)
+    .sort((a, b) => a.movedAt - b.movedAt)
+    .map(i => ({
+      ...i,
+      daysWaiting: Math.floor((now - i.movedAt) / (24 * 60 * 60 * 1000)),
+    }));
+
+  // Calcular tiempo total estimado
+  const totalEstimateMin = hacerItems.reduce((sum, i) => sum + (Number(i.estimateMin) || 0), 0);
+
+  return renderPage(res, 'hoy', {
+    title: 'Hoy',
+    hacerItems,
+    agendarItems,
+    delegarItems,
+    totalEstimateMin,
+    todayFormatted: todayStart.toLocaleDateString('es', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    }),
+  });
+});
+
 app.get('/collect', async (req, res) => {
   try {
     const items = (await loadReqItemsByList(req, 'collect', { excludeDone: true }))
