@@ -48,9 +48,10 @@
 
   <% for (const it of items) { %>
     <%
-      const uVal = it.urgency || 3;
-      const iVal = it.importance || 3;
-      const priorityScore = uVal * iVal;
+      // Calculate priority score for color coding
+      const urgencyVal = it.urgency || 3;
+      const importanceVal = it.importance || 3;
+      const priorityScore = urgencyVal * importanceVal;
       let borderClass = '';
       let bgClass = it.actionableOk ? '' : 'bg-red-50 dark:bg-red-900/10';
 
@@ -65,7 +66,7 @@
         bgClass = 'bg-yellow-50/30 dark:bg-yellow-900/10';
       }
     %>
-    <div class="px-3 py-2 border-b last:border-b-0 <%= borderClass %> <%= bgClass %> hover:bg-opacity-75 transition-colors item-card" data-urgency="<%= uVal %>">
+    <div class="px-3 py-2 border-b last:border-b-0 <%= borderClass %> <%= bgClass %> hover:bg-opacity-75 transition-colors item-card" data-urgency="<%= urgencyVal %>">
       <div class="flex items-center gap-2">
         <form method="POST" action="/hacer/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 hacer-edit-form" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
