@@ -32,7 +32,7 @@
         <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 hidden md:block mx-1"></div>
 
         <!-- Desktop nav -->
-        <nav class="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto" aria-label="Navegación principal">
+        <nav class="hidden md:flex items-center gap-0.5 flex-1 overflow-x-hidden" aria-label="Navegación principal">
           <a class="nav-link" href="/" data-page="/">🧭 Dashboard</a>
           <a class="nav-link" href="/collect" data-page="/collect">📥 Collect</a>
           <a class="nav-link" href="/hacer" data-page="/hacer">✅ Hacer</a>
@@ -53,6 +53,7 @@
               <button class="text-xs px-2 py-1 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-300 transition-colors">🚪 Salir</button>
             </form>
           <% } %>
+          <button id="hotkeys-help" aria-label="Ver atajos de teclado" title="Atajos de teclado (?)" class="hidden md:block p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-base leading-none">⌨️</button>
           <button id="theme-toggle" aria-label="Cambiar tema" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-base leading-none">🌙</button>
           <button id="nav-hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-nav" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -128,6 +129,18 @@
         mobileNav.classList.toggle('hidden');
         hamburger.setAttribute('aria-expanded', String(!isOpen));
       });
+    })();
+
+    // Hotkeys help button
+    (function () {
+      const helpBtn = document.getElementById('hotkeys-help');
+      if (helpBtn) {
+        helpBtn.addEventListener('click', function () {
+          // Trigger the help modal (implemented in hotkeys.js)
+          const event = new KeyboardEvent('keydown', { key: '?' });
+          document.dispatchEvent(event);
+        });
+      }
     })();
   </script>
 
