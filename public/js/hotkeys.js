@@ -122,9 +122,11 @@
   }
 
   function openSearch() {
-    // Placeholder for search functionality (Phase 2)
-    if (window.UIHelpers) {
-      window.UIHelpers.showToast('Búsqueda global - próximamente en Fase 2', 'info');
+    // Open global search modal
+    if (window.GlobalSearch) {
+      window.GlobalSearch.open();
+    } else {
+      console.warn('Global search not loaded');
     }
   }
 
