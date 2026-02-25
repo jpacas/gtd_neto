@@ -2,6 +2,16 @@
   <div class="flex-1">
     <h2 class="text-lg font-semibold">Hacer</h2>
     <p class="text-sm text-slate-600 mt-1">Vista compacta de acciones &lt;10 min, ordenadas por urgencia y luego importancia.</p>
+  </div>
+  <% if (totalEstimateMin > 0) { %>
+    <div class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white">
+      ⏱️ Total: <strong><%= totalEstimateMin %> min</strong>
+    </div>
+  <% } %>
+</div>
+
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+  <div class="flex-1">
     <details class="mt-2">
       <summary class="text-xs text-blue-600 cursor-pointer hover:underline">ℹ️ ¿Cómo se calcula la accionabilidad?</summary>
       <div class="mt-1 text-xs text-slate-600 bg-slate-50 p-2 rounded">

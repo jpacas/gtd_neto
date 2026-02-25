@@ -1,7 +1,18 @@
 <div class="flex items-center justify-between gap-3">
-  <div>
+  <div class="flex-1">
     <h2 class="text-lg font-semibold">Agendar</h2>
     <p class="text-sm text-slate-600 mt-1">Fecha al inicio, actividad después. Ordenado por fecha más próxima primero.</p>
+  </div>
+  <% if (totalEstimateMin > 0) { %>
+    <div class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white">
+      ⏱️ Total: <strong><%= totalEstimateMin %> min</strong>
+    </div>
+  <% } %>
+  <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50">Ir a Collect</a>
+</div>
+
+<div class="flex items-center justify-between gap-3 mt-2">
+  <div>
     <details class="mt-2">
       <summary class="text-xs text-blue-600 cursor-pointer hover:underline">ℹ️ ¿Cómo se calcula la accionabilidad?</summary>
       <div class="mt-1 text-xs text-slate-600 bg-slate-50 p-2 rounded">
@@ -46,14 +57,18 @@
         <form method="POST" action="/agendar/<%= it.id %>/update" class="agendar-quick-form w-36 shrink-0" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <input type="hidden" name="title" value="<%= it.title || it.input %>" />
+          <input type="hidden" name="estimateMin" value="<%= it.estimateMin || 10 %>" />
           <input type="date" name="scheduledFor" value="<%= it.scheduledFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
         </form>
 
-        <div class="agendar-view-row flex-1 min-w-0" data-id="<%= it.id %>" data-title="<%= it.title || it.input %>">
+        <div class="agendar-view-row flex-1 min-w-0" data-id="<%= it.id %>" data-title="<%= it.title || it.input %>" data-estimate="<%= it.estimateMin || 10 %>">
           <span class="text-sm"><%= it.title || it.input %></span>
+          <% if (it.estimateMin) { %>
+            <span class="text-xs text-slate-500 ml-2">⏱️ <%= it.estimateMin %> min</span>
+          <% } %>
         </div>
 
-        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar actividad">✏️</button>
+        <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle shrink-0" data-id="<%= it.id %>" title="Editar actividad">✏️</button>
 
         <form method="POST" action="/agendar/<%= it.id %>/complete">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -81,19 +96,48 @@
         if (!row || !quickForm) return;
 
         const currentTitle = row.dataset.title || '';
-        const nextTitle = await window.promptModal({
-          title: 'Editar actividad',
-          defaultValue: currentTitle,
-          placeholder: 'Describe la actividad',
-        });
-        if (nextTitle == null) return;
-        const title = String(nextTitle).trim();
-        if (!title) return;
+        const currentEstimate = Number(row.dataset.estimate) || 10;
 
-        const hiddenTitle = quickForm.querySelector('input[name="title"]');
-        if (!hiddenTitle) return;
-        hiddenTitle.value = title;
-        quickForm.submit();
+        // Create inline edit form
+        const form = document.createElement('form');
+        form.className = 'flex-1 flex gap-2 items-center bg-slate-50 p-2 rounded';
+        form.innerHTML = `
+          <input type="text" name="title" value="${currentTitle}"
+                 class="flex-1 px-2 py-1 text-sm border border-slate-300 rounded"
+                 placeholder="Describe la actividad" required />
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-slate-600">⏱️</span>
+            <input type="number" name="estimateMin" value="${currentEstimate}"
+                   class="w-16 px-2 py-1 text-sm border border-slate-300 rounded"
+                   min="1" max="600" />
+            <span class="text-xs text-slate-500">min</span>
+          </div>
+          <button type="submit" class="text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50">Guardar</button>
+          <button type="button" class="cancel-edit text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50">Cancelar</button>
+        `;
+
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const titleInput = form.querySelector('input[name="title"]');
+          const estimateInput = form.querySelector('input[name="estimateMin"]');
+          const title = titleInput.value.trim();
+          const estimate = Number(estimateInput.value) || 10;
+
+          if (!title) return;
+
+          const hiddenTitle = quickForm.querySelector('input[name="title"]');
+          const hiddenEstimate = quickForm.querySelector('input[name="estimateMin"]');
+          if (hiddenTitle) hiddenTitle.value = title;
+          if (hiddenEstimate) hiddenEstimate.value = estimate;
+          quickForm.submit();
+        });
+
+        form.querySelector('.cancel-edit').addEventListener('click', () => {
+          form.replaceWith(row);
+        });
+
+        row.replaceWith(form);
+        form.querySelector('input[name="title"]').focus();
       });
     });
   })();

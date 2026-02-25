@@ -1013,9 +1013,12 @@ app.get('/hacer', async (req, res) => {
       return Number(b.importance || 0) - Number(a.importance || 0);
     });
 
+  const totalEstimateMin = items.reduce((sum, i) => sum + (Number(i.estimateMin) || 0), 0);
+
   return renderPage(res, 'hacer', {
     title: 'Hacer',
     items,
+    totalEstimateMin,
     needApiKey: Boolean(APP_API_KEY),
   });
 });
@@ -1142,9 +1145,12 @@ app.get('/agendar', async (req, res) => {
       return ad.localeCompare(bd); // fecha más próxima primero
     });
 
+  const totalEstimateMin = items.reduce((sum, i) => sum + (Number(i.estimateMin) || 0), 0);
+
   return renderPage(res, 'agendar', {
     title: 'Agendar',
     items,
+    totalEstimateMin,
     needApiKey: Boolean(APP_API_KEY),
   });
 });
@@ -1158,9 +1164,11 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
       const current = await loadReqItemById(req, id);
       if (!current || current.list !== 'agendar') return res.redirect('/agendar');
       const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+      const estimateMin = sanitizeIntegerField(req.body?.estimateMin ?? current.estimateMin ?? 10, { field: 'estimateMin', min: 1, max: 600, fallback: 10 });
       const next = updateItem(current, {
         title,
         scheduledFor: scheduledFor || null,
+        estimateMin,
       });
       await saveReqItem(req, next);
       return res.redirect('/agendar');
@@ -1172,9 +1180,11 @@ app.post('/agendar/:id/update', requireApiKey, async (req, res) => {
 
     const current = db.items[idx];
     const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+    const estimateMin = sanitizeIntegerField(req.body?.estimateMin ?? current.estimateMin ?? 10, { field: 'estimateMin', min: 1, max: 600, fallback: 10 });
     db.items[idx] = updateItem(current, {
       title,
       scheduledFor: scheduledFor || null,
+      estimateMin,
     });
 
     await saveReqItem(req, db.items[idx], db);
@@ -1247,6 +1257,7 @@ app.get('/delegar', async (req, res) => {
   }
 
   const groups = Array.from(groupsMap.entries()).map(([label, rows]) => ({ label, rows }));
+  const totalEstimateMin = items.reduce((sum, i) => sum + (Number(i.estimateMin) || 0), 0);
 
   return renderPage(res, 'delegar', {
     title: 'Delegar',
@@ -1255,6 +1266,7 @@ app.get('/delegar', async (req, res) => {
     groupBy,
     ownerFilter: String(req.query?.owner || ''),
     error,
+    totalEstimateMin,
     needApiKey: Boolean(APP_API_KEY),
   });
 });
@@ -1273,10 +1285,12 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
       const current = await loadReqItemById(req, id);
       if (!current || current.list !== 'delegar') return res.redirect('/delegar?error=not_found');
       const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+      const estimateMin = sanitizeIntegerField(req.body?.estimateMin ?? current.estimateMin ?? 10, { field: 'estimateMin', min: 1, max: 600, fallback: 10 });
       await saveReqItem(req, updateItem(current, {
         title,
         delegatedFor,
         delegatedTo,
+        estimateMin,
       }));
       return res.redirect('/delegar');
     }
@@ -1287,10 +1301,12 @@ app.post('/delegar/:id/update', requireApiKey, async (req, res) => {
 
     const current = db.items[idx];
     const title = sanitizeInput(String(req.body?.title || current.title || current.input || ''));
+    const estimateMin = sanitizeIntegerField(req.body?.estimateMin ?? current.estimateMin ?? 10, { field: 'estimateMin', min: 1, max: 600, fallback: 10 });
     db.items[idx] = updateItem(current, {
       title,
       delegatedFor,
       delegatedTo,
+      estimateMin,
     });
 
     await saveReqItem(req, db.items[idx], db);

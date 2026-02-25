@@ -1,9 +1,14 @@
 <div class="flex items-center justify-between gap-3">
-  <div>
+  <div class="flex-1">
     <h2 class="text-lg font-semibold">Delegar</h2>
     <p class="text-sm text-slate-600 mt-1">Fecha y responsable requeridos. Ordenado por fecha más próxima primero.</p>
   </div>
-  <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50">Ir a Collect</a>
+  <% if (totalEstimateMin > 0) { %>
+    <div class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white">
+      ⏱️ Total: <strong><%= totalEstimateMin %> min</strong>
+    </div>
+  <% } %>
+  <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50">Ir a Collect</a>
 </div>
 
 <% if (error === 'missing_fields') { %>
@@ -53,13 +58,19 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <input type="hidden" name="title" value="<%= it.title || it.input %>" />
               <input type="hidden" name="delegatedTo" value="<%= it.delegatedTo || '' %>" />
+              <input type="hidden" name="estimateMin" value="<%= it.estimateMin || 10 %>" />
               <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="w-full text-xs px-1.5 py-1 rounded bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300" required onchange="this.form.submit()" />
             </form>
 
             <form method="POST" action="/delegar/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 delegar-edit-form" data-id="<%= it.id %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="text" name="title" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1.5 text-sm" />
-              <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-44 border rounded-md px-2 py-1.5 text-sm" required />
+              <input type="text" name="title" value="<%= it.title || it.input %>" class="flex-1 border rounded-md px-2 py-1.5 text-sm" />
+              <input type="text" name="delegatedTo" value="<%= it.delegatedTo || '' %>" placeholder="Responsable" class="w-32 border rounded-md px-2 py-1.5 text-sm" required />
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-slate-600">⏱️</span>
+                <input type="number" name="estimateMin" value="<%= it.estimateMin || 10 %>" class="w-16 border rounded-md px-2 py-1 text-sm" min="1" max="600" />
+                <span class="text-xs text-slate-500">min</span>
+              </div>
               <input type="date" name="delegatedFor" value="<%= it.delegatedFor || '' %>" class="border rounded-md px-2 py-1.5 text-sm" required />
               <button class="text-xs px-2 py-1.5 rounded border bg-white hover:bg-slate-50">Guardar</button>
             </form>
@@ -67,6 +78,9 @@
             <div class="delegar-view-row flex-1 min-w-0" data-id="<%= it.id %>">
               <span class="text-sm"><%= it.title || it.input %></span>
               <span class="text-xs text-slate-500 ml-2">→ <%= it.delegatedTo || 'Sin responsable' %></span>
+              <% if (it.estimateMin) { %>
+                <span class="text-xs text-slate-500 ml-2">⏱️ <%= it.estimateMin %> min</span>
+              <% } %>
             </div>
 
             <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar responsable/actividad">✏️</button>
