@@ -1,0 +1,135 @@
+<div class="max-w-2xl mx-auto space-y-8 py-8">
+  <!-- Header -->
+  <div class="text-center space-y-3">
+    <div class="flex justify-center">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+    </div>
+    <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">Bienvenido a GTD Neto</h1>
+    <p class="text-surface-600 dark:text-surface-400 leading-relaxed max-w-lg mx-auto">
+      Tu sistema GTD personal. Empieza capturando todo lo que tienes en mente — ideas, tareas, proyectos — y luego decide qué hacer con cada cosa.
+    </p>
+  </div>
+
+  <!-- Steps -->
+  <div class="space-y-4">
+    <!-- Step 1 -->
+    <div class="card p-5 flex gap-4">
+      <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
+        <span class="text-brand-600 dark:text-brand-400 font-bold text-sm">1</span>
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-semibold text-surface-900 dark:text-surface-100">Captura todo en Collect</h3>
+        <p class="text-sm text-surface-600 dark:text-surface-400">
+          Vacia tu mente. Escribe cada pensamiento, tarea o idea sin filtrar. No juzgues todavía — solo captura.
+        </p>
+        <a href="/collect" class="inline-flex items-center gap-1.5 text-sm text-brand-600 dark:text-brand-400 font-medium hover:underline mt-1">
+          Ir a Collect
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="card p-5 flex gap-4">
+      <div class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center shrink-0">
+        <span class="text-surface-500 dark:text-surface-400 font-bold text-sm">2</span>
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-semibold text-surface-900 dark:text-surface-100">Clasifica cada ítem</h3>
+        <p class="text-sm text-surface-600 dark:text-surface-400">
+          Por cada ítem en Collect, decide: ¿requiere acción? ¿Cuándo? ¿Lo haces tú o alguien más? Envíalo al destino correcto.
+        </p>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <span class="context-badge">✅ Hacer</span>
+          <span class="context-badge">🗓️ Agendar</span>
+          <span class="area-badge">🤝 Delegar</span>
+          <span class="area-badge">🧩 Desglosar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="card p-5 flex gap-4">
+      <div class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center shrink-0">
+        <span class="text-surface-500 dark:text-surface-400 font-bold text-sm">3</span>
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-semibold text-surface-900 dark:text-surface-100">Revisa y ejecuta</h3>
+        <p class="text-sm text-surface-600 dark:text-surface-400">
+          Cada día, revisa tu lista <strong>Hacer</strong>. Cada semana, haz la Revisión Semanal para mantener el sistema al día.
+        </p>
+        <a href="/hacer" class="inline-flex items-center gap-1.5 text-sm text-brand-600 dark:text-brand-400 font-medium hover:underline mt-1">
+          Ver mis tareas
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- GTD Flow Reference -->
+  <div class="card p-5">
+    <h3 class="text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3">Los 5 destinos GTD</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-50 dark:bg-surface-800">
+        <span class="text-base shrink-0">✅</span>
+        <div>
+          <div class="font-medium text-surface-900 dark:text-surface-100">Hacer</div>
+          <div class="text-xs text-surface-500 dark:text-surface-400">Acción específica, haces tú</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-50 dark:bg-surface-800">
+        <span class="text-base shrink-0">🗓️</span>
+        <div>
+          <div class="font-medium text-surface-900 dark:text-surface-100">Agendar</div>
+          <div class="text-xs text-surface-500 dark:text-surface-400">Tiene fecha específica</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-50 dark:bg-surface-800">
+        <span class="text-base shrink-0">🤝</span>
+        <div>
+          <div class="font-medium text-surface-900 dark:text-surface-100">Delegar</div>
+          <div class="text-xs text-surface-500 dark:text-surface-400">Lo hace otra persona</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-50 dark:bg-surface-800">
+        <span class="text-base shrink-0">🧩</span>
+        <div>
+          <div class="font-medium text-surface-900 dark:text-surface-100">Desglosar</div>
+          <div class="text-xs text-surface-500 dark:text-surface-400">Proyecto con múltiples pasos</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-50 dark:bg-surface-800">
+        <span class="text-base shrink-0">⭐</span>
+        <div>
+          <div class="font-medium text-surface-900 dark:text-surface-100">Algún Día</div>
+          <div class="text-xs text-surface-500 dark:text-surface-400">Ideas para el futuro</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-50 dark:bg-surface-800">
+        <span class="text-base shrink-0">🚫</span>
+        <div>
+          <div class="font-medium text-surface-900 dark:text-surface-100">No Hacer</div>
+          <div class="text-xs text-surface-500 dark:text-surface-400">Descartado conscientemente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="flex flex-col sm:flex-row gap-3 justify-center">
+    <a href="/collect" class="btn-primary py-3 px-8 text-base justify-center">
+      Empezar a capturar
+    </a>
+    <a href="/" class="btn-secondary py-3 px-8 text-base justify-center">
+      Ir al Dashboard
+    </a>
+  </div>
+
+  <p class="text-center text-xs text-surface-400 dark:text-surface-500">
+    GTD Neto es open source · <a href="https://gettingthingsdone.com" class="underline hover:text-surface-600 dark:hover:text-surface-300" target="_blank" rel="noopener">Aprende GTD</a>
+  </p>
+</div>

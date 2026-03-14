@@ -1,0 +1,51 @@
+<div class="max-w-lg mx-auto text-center space-y-6 py-12">
+  <div class="flex justify-center">
+    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl shadow-lg">
+      ✨
+    </div>
+  </div>
+
+  <div>
+    <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">Función Premium</h1>
+    <p class="text-surface-600 dark:text-surface-400 mt-2 leading-relaxed">
+      Esta función requiere una cuenta Premium de GTD Neto.
+    </p>
+  </div>
+
+  <!-- Features comparison -->
+  <div class="card p-5 text-left space-y-4">
+    <div>
+      <h3 class="text-sm font-semibold text-surface-700 dark:text-surface-300 mb-2">Plan Gratuito</h3>
+      <ul class="space-y-1.5">
+        <% const freeFeatures = ['5 destinos GTD', 'Contextos del sistema', 'Áreas del sistema', 'Exportar datos', 'Estadísticas básicas', 'Modo oscuro', 'Hasta 5 etiquetas']; %>
+        <% for (const f of freeFeatures) { %>
+        <li class="flex items-center gap-2 text-sm text-surface-600 dark:text-surface-400">
+          <svg class="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <%= f %>
+        </li>
+        <% } %>
+      </ul>
+    </div>
+
+    <div class="border-t border-surface-100 dark:border-surface-700 pt-4">
+      <h3 class="text-sm font-semibold text-brand-600 dark:text-brand-400 mb-2">Plan Premium ✨</h3>
+      <ul class="space-y-1.5">
+        <% const premiumFeatures = ['Revisión Semanal guiada', 'Command Palette (Cmd+K)', 'Contextos y áreas personalizados', 'Heatmap de actividad', 'Focus Mode en Hacer', 'Estadísticas avanzadas', 'Etiquetas ilimitadas']; %>
+        <% for (const f of premiumFeatures) { %>
+        <li class="flex items-center gap-2 text-sm text-surface-700 dark:text-surface-200 font-medium">
+          <svg class="w-3.5 h-3.5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+          <%= f %>
+        </li>
+        <% } %>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-3">
+    <a href="/" class="btn-secondary justify-center">Volver al inicio</a>
+  </div>
+
+  <p class="text-xs text-surface-400 dark:text-surface-500">
+    GTD Neto es open source. Puedes desplegarlo sin límites con <code class="bg-surface-100 dark:bg-surface-800 px-1 rounded">ENFORCE_FEATURE_FLAGS=false</code>.
+  </p>
+</div>

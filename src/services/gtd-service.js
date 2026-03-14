@@ -3,7 +3,28 @@ export const DESTINATIONS = [
   { key: 'agendar', label: 'Agendar', hint: 'Acciones con fecha/agenda' },
   { key: 'delegar', label: 'Delegar', hint: 'Pendientes de terceros' },
   { key: 'desglosar', label: 'Desglosar', hint: 'Items para dividir en pasos' },
+  { key: 'someday', label: 'Algún Día / Tal Vez', hint: 'Ideas y proyectos para el futuro' },
   { key: 'no-hacer', label: 'No hacer', hint: 'Descartar o archivar' },
+];
+
+export const VALID_LISTS = ['collect', ...DESTINATIONS.map(d => d.key)];
+
+// System contexts — seeded in UI, not persisted per user
+export const SYSTEM_CONTEXTS = [
+  '@trabajo',
+  '@casa',
+  '@computadora',
+  '@telefono',
+  '@recados',
+  '@esperando',
+];
+
+// System areas — seeded in UI, not persisted per user
+export const SYSTEM_AREAS = [
+  'trabajo',
+  'personal',
+  'salud',
+  'finanzas',
 ];
 
 export function destinationByKey(key) {

@@ -1,80 +1,111 @@
-<h2 class="text-lg font-semibold dark:text-slate-100">Collect</h2>
-<p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Captura rápido y decide destino.</p>
-
-<div class="mt-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-4">
-  <form method="POST" action="/collect/add" class="space-y-2" id="collectForm">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label for="collectInput" class="sr-only">Nueva actividad</label>
-    <textarea id="collectInput" name="input" rows="2" class="w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Escribe una actividad..." aria-describedby="collect-help"></textarea>
-    <button type="button" id="collectAddBtn" class="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors">Agregar</button>
-    <p id="collect-help" class="text-xs text-slate-500 dark:text-slate-400">Enter agrega · Shift+Enter salto de línea.</p>
-  </form>
-</div>
-
-<div id="collectList" class="mt-4 divide-y dark:divide-slate-700 rounded-xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
-  <% if (!items.length) { %>
-    <div id="collectEmpty" class="empty-state m-3">
-      <div class="text-4xl mb-3">📥</div>
-      <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Tu bandeja está vacía</div>
-      <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-        Captura rápidamente ideas, tareas o recordatorios.<br/>
-        Después podrás organizarlos y asignarles un destino.
-      </div>
-      <div class="text-xs text-slate-500 dark:text-slate-500">
-        💡 Tip: Usa <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono text-[10px]">Enter</kbd> para agregar rápidamente
-      </div>
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-surface-900 dark:text-surface-50">Collect</h1>
+      <p class="text-sm text-surface-500 dark:text-surface-400 mt-0.5">Captura rápido y decide destino.</p>
     </div>
-  <% } else { %>
-    <div id="collectEmpty" class="empty-state m-3 hidden">
-      <div class="text-4xl mb-3">📥</div>
-      <div class="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Tu bandeja está vacía</div>
-      <div class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-        Captura rápidamente ideas, tareas o recordatorios.<br/>
-        Después podrás organizarlos y asignarles un destino.
-      </div>
-      <div class="text-xs text-slate-500 dark:text-slate-500">
-        💡 Tip: Usa <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono text-[10px]">Enter</kbd> para agregar rápidamente
-      </div>
-    </div>
-  <% } %>
+    <% if (items.length > 0) { %>
+    <span class="text-xs font-medium text-surface-500 dark:text-surface-400"><%= items.length %> elemento<%= items.length === 1 ? '' : 's' %></span>
+    <% } %>
+  </div>
 
-  <% for (const it of items) { %>
-    <div class="px-3 py-2">
-      <div class="flex items-center justify-between gap-2">
-        <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <input name="input" value="<%= it.title || it.input %>" class="w-full border rounded-md px-2 py-1 text-sm" />
-          <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
-        </form>
+  <div class="card p-4">
+    <form method="POST" action="/collect/add" class="space-y-3" id="collectForm">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label for="collectInput" class="sr-only">Nueva actividad</label>
+      <textarea id="collectInput" name="input" rows="2" class="input-base resize-none" placeholder="Escribe una idea, tarea o recordatorio..." aria-describedby="collect-help"></textarea>
+      <div class="flex items-center justify-between">
+        <p id="collect-help" class="text-xs text-surface-400 dark:text-surface-500">Enter agrega · Shift+Enter salto de línea</p>
+        <button type="button" id="collectAddBtn" class="btn-primary">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+          Agregar
+        </button>
+      </div>
+    </form>
+  </div>
 
-        <div class="collect-text-row flex-1 min-w-0" data-id="<%= it.id %>">
-          <span class="text-sm"><%= it.title || it.input %></span>
+  <div id="collectList" class="divide-y divide-surface-100 dark:divide-surface-700 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 overflow-hidden">
+    <% if (!items.length) { %>
+      <div id="collectEmpty" class="empty-state">
+        <div class="w-16 h-16 rounded-full bg-surface-100 dark:bg-surface-700 flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-surface-400 dark:text-surface-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+        </div>
+        <div class="text-base font-semibold text-surface-700 dark:text-surface-200 mb-1">Bandeja vacía</div>
+        <div class="text-sm text-surface-500 dark:text-surface-400 mb-3 max-w-xs">
+          Captura ideas, tareas y recordatorios. Los organizarás después.
+        </div>
+        <div class="text-xs text-surface-400 dark:text-surface-500">
+          💡 Usa <kbd class="px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-700 font-mono text-[10px]">Enter</kbd> para agregar rápidamente
+        </div>
+      </div>
+    <% } else { %>
+      <div id="collectEmpty" class="empty-state hidden">
+        <div class="text-sm text-surface-500 dark:text-surface-400">Bandeja vacía ✓</div>
+      </div>
+    <% } %>
+
+    <% for (const it of items) { %>
+      <%
+        // Item aging: warn if item is more than 7 days old
+        const createdDate = it.createdAt ? new Date(it.createdAt) : null;
+        const ageMs = createdDate ? (Date.now() - createdDate.getTime()) : 0;
+        const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+        const isAging = ageDays >= 7;
+      %>
+      <div class="px-3 py-2.5 <%= isAging ? 'item-aging pl-3' : '' %>" title="<%= isAging ? `En bandeja hace ${ageDays} días` : '' %>">
+        <div class="flex items-start justify-between gap-2">
+          <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input name="input" value="<%= it.title || it.input %>" class="input-base py-1 text-sm" />
+            <button class="btn-primary text-xs shrink-0">Guardar</button>
+          </form>
+
+          <div class="collect-text-row flex-1 min-w-0" data-id="<%= it.id %>">
+            <span class="text-sm text-surface-800 dark:text-surface-200"><%= it.title || it.input %></span>
+            <% if (isAging) { %>
+              <span class="ml-2 text-[10px] text-amber-600 dark:text-amber-400 font-medium"><%= ageDays %>d</span>
+            <% } %>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0 mt-0.5">
+            <button type="button" class="p-1 rounded text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 edit-toggle" data-id="<%= it.id %>" aria-label="Editar">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button type="button" class="p-1 rounded text-surface-300 hover:text-red-500 dark:hover:text-red-400 delete-btn" data-id="<%= it.id %>" aria-label="Borrar">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-1 shrink-0">
-          <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="<%= it.id %>" title="Editar" aria-label="Editar actividad">✏️</button>
-          <button type="button" class="text-slate-400 hover:text-red-500 delete-btn" data-id="<%= it.id %>" title="Borrar" aria-label="Borrar actividad">🗑️</button>
-        </div>
-      </div>
-
-      <% if (it.tags && it.tags.length > 0) { %>
-        <div class="mt-1 flex flex-wrap gap-1">
-          <% it.tags.forEach(tag => { %>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"><%= tag %></span>
-          <% }); %>
-        </div>
-      <% } %>
-
-      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="destination" value="" />
-        <% const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' }; %>
-        <% for (const d of destinations) { %>
-          <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"><%= destIcons[d.key] || '' %> <%= d.label %></button>
+        <% if (it.tags && it.tags.length > 0) { %>
+          <div class="mt-1 flex flex-wrap gap-1">
+            <% it.tags.forEach(tag => { %>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300"><%= tag %></span>
+            <% }); %>
+          </div>
         <% } %>
-      </form>
-    </div>
-  <% } %>
+
+        <form method="POST" action="/collect/<%= it.id %>/send" class="mt-2 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="destination" value="" />
+          <% const destConfig = {
+            hacer: { label: 'Hacer', cls: 'hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 hover:text-green-700 dark:hover:text-green-300' },
+            agendar: { label: 'Agendar', cls: 'hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-700 dark:hover:text-blue-300' },
+            delegar: { label: 'Delegar', cls: 'hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-700 hover:text-purple-700 dark:hover:text-purple-300' },
+            desglosar: { label: 'Desglosar', cls: 'hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-300 dark:hover:border-orange-700 hover:text-orange-700 dark:hover:text-orange-300' },
+            someday: { label: 'Algún Día', cls: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20 hover:border-yellow-300 dark:hover:border-yellow-700 hover:text-yellow-700 dark:hover:text-yellow-300' },
+            'no-hacer': { label: 'No hacer', cls: 'hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400' },
+          }; %>
+          <% for (const d of destinations) { %>
+            <% const dc = destConfig[d.key] || {}; %>
+            <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-0.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-400 transition-all <%= dc.cls || '' %>">
+              <%= dc.label || d.label %>
+            </button>
+          <% } %>
+        </form>
+      </div>
+    <% } %>
+  </div>
 </div>
 
 <script nonce="<%= cspNonce %>">
@@ -86,12 +117,24 @@
 
     let isSubmitting = false;
     const csrfToken = '<%= csrfToken %>';
-    const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' };
-    const destinationButtons = `<% for (const d of destinations) { %><button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50">${destIcons['<%= d.key %>'] || ''} <%= d.label %></button><% } %>`;
+    const destinations = <%- JSON.stringify(destinations.map(d => d.key)) %>;
+    const destLabels = {
+      hacer: 'Hacer', agendar: 'Agendar', delegar: 'Delegar',
+      desglosar: 'Desglosar', someday: 'Algún Día', 'no-hacer': 'No hacer',
+    };
+    const destHoverCls = {
+      hacer: 'hover:bg-green-50 hover:border-green-300 hover:text-green-700',
+      agendar: 'hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700',
+      delegar: 'hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700',
+      desglosar: 'hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700',
+      someday: 'hover:bg-yellow-50 hover:border-yellow-300 hover:text-yellow-700',
+      'no-hacer': 'hover:bg-red-50 hover:border-red-300 hover:text-red-600',
+    };
 
-    function makeTempId() {
-      const bytes = crypto.getRandomValues(new Uint8Array(8));
-      return 'tmp_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    function makeDestButtons() {
+      return destinations.map(k =>
+        `<button type="button" data-destination="${k}" class="text-[11px] px-2 py-0.5 rounded-lg border border-surface-200 bg-white text-surface-600 transition-all ${destHoverCls[k] || ''}">${destLabels[k] || k}</button>`
+      ).join('');
     }
 
     function attachEditHandlers(root = document) {
@@ -116,15 +159,12 @@
       root.querySelectorAll('.collect-send-form').forEach((formEl) => {
         if (formEl.dataset.bound === '1') return;
         formEl.dataset.bound = '1';
-
         const hiddenDestination = formEl.querySelector('input[name="destination"]');
-        const buttons = formEl.querySelectorAll('button[data-destination]');
-
-        buttons.forEach((btn) => {
+        formEl.querySelectorAll('button[data-destination]').forEach((btn) => {
           btn.addEventListener('click', () => {
             if (!hiddenDestination) return;
             hiddenDestination.value = btn.dataset.destination || '';
-            LoadingManager.show(btn);
+            if (typeof LoadingManager !== 'undefined') LoadingManager.show(btn);
             formEl.submit();
           });
         });
@@ -137,14 +177,12 @@
         btn.dataset.bound = '1';
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
-          if (!id || id.startsWith('tmp_')) return; // pending items can't be deleted yet
+          if (!id || id.startsWith('tmp_')) return;
           const list = document.getElementById('collectList');
           const empty = document.getElementById('collectEmpty');
-          const row = btn.closest('.px-3.py-2');
+          const row = btn.closest('.px-3');
           if (!row) return;
 
-          // Optimistic: animate and remove
-          const sibling = row.nextSibling;
           row.style.transition = 'opacity 0.2s, transform 0.2s';
           row.style.opacity = '0';
           row.style.transform = 'translateX(-16px)';
@@ -158,10 +196,7 @@
             const body = new URLSearchParams({ _csrf: csrfToken });
             const r = await fetch(`/items/${encodeURIComponent(id)}/delete`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
               body,
             });
             if (!r.ok) {
@@ -170,69 +205,69 @@
               throw new Error(msg + ' (' + r.status + ')');
             }
           } catch (err) {
-            // Rollback: re-insert the row
             row.style.opacity = '';
             row.style.transform = '';
-            if (list) list.insertBefore(row, sibling);
+            if (list) list.insertBefore(row, null);
             if (empty) empty.classList.add('hidden');
-            toast.error('No se pudo borrar el item. ' + (err?.message || ''));
+            if (typeof toast !== 'undefined') toast.error('No se pudo borrar. ' + (err?.message || ''));
           }
         });
       });
     }
 
+    function makeTempId() {
+      const bytes = crypto.getRandomValues(new Uint8Array(8));
+      return 'tmp_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     function buildRow(item, pending = false) {
       const wrapper = document.createElement('div');
-      wrapper.className = 'px-3 py-2' + (pending ? ' optimistic-pending opacity-60' : '');
-      if (pending) wrapper.style.position = 'relative';
+      wrapper.className = 'px-3 py-2.5' + (pending ? ' optimistic-pending opacity-60' : '');
       const idAttr = String(item.id || '').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
       const idUrl = encodeURIComponent(String(item.id || ''));
       wrapper.innerHTML = `
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-start justify-between gap-2">
           <form method="POST" action="/collect/${idUrl}/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="${idAttr}">
             <input type="hidden" name="_csrf" value="${csrfToken}" />
-            <input name="input" class="w-full border rounded-md px-2 py-1 text-sm" />
-            <button class="text-xs px-2 py-1 rounded border bg-white hover:bg-slate-50">Guardar</button>
+            <input name="input" class="input-base py-1 text-sm" />
+            <button class="btn-primary text-xs shrink-0">Guardar</button>
           </form>
-          <div class="collect-text-row flex-1 min-w-0" data-id="${idAttr}"><span class="text-sm"></span></div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button type="button" class="text-slate-500 hover:text-slate-700 edit-toggle" data-id="${idAttr}" title="Editar" aria-label="Editar actividad">✏️</button>
-            <button type="button" class="text-slate-400 hover:text-red-500 delete-btn" data-id="${idAttr}" title="Borrar" aria-label="Borrar actividad">🗑️</button>
+          <div class="collect-text-row flex-1 min-w-0" data-id="${idAttr}"><span class="text-sm text-surface-800"></span></div>
+          <div class="flex items-center gap-1 shrink-0 mt-0.5">
+            <button type="button" class="p-1 rounded text-surface-400 hover:text-surface-700 edit-toggle" data-id="${idAttr}" aria-label="Editar">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button type="button" class="p-1 rounded text-surface-300 hover:text-red-500 delete-btn" data-id="${idAttr}" aria-label="Borrar">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
           </div>
         </div>
-        <form method="POST" action="/collect/${idUrl}/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
+        <form method="POST" action="/collect/${idUrl}/send" class="mt-2 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
           <input type="hidden" name="_csrf" value="${csrfToken}" />
           <input type="hidden" name="destination" value="" />
-          ${destinationButtons}
+          ${makeDestButtons()}
         </form>
       `;
       const val = item.title || item.input || '';
       wrapper.querySelector('.collect-text-row span').textContent = val;
       wrapper.querySelector('.collect-edit-form input[name="input"]').value = val;
-
       if (pending) {
-        const spinnerEl = document.createElement('span');
-        spinnerEl.className = 'opt-spinner absolute right-2 top-2 text-slate-400 text-xs pointer-events-none';
-        spinnerEl.setAttribute('aria-hidden', 'true');
-        spinnerEl.textContent = '⏳';
-        wrapper.appendChild(spinnerEl);
+        const spinner = document.createElement('span');
+        spinner.className = 'opt-spinner absolute right-2 top-2 text-surface-400 text-xs pointer-events-none';
+        spinner.textContent = '⏳';
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(spinner);
       }
-
       return wrapper;
     }
 
     function finalizeRow(row, realItem) {
       const realId = String(realItem.id || '');
       const realIdEnc = encodeURIComponent(realId);
-
       row.querySelectorAll('form[action]').forEach(f => {
         f.action = f.action.replace(/collect\/tmp_[a-f0-9]+\//, 'collect/' + realIdEnc + '/');
       });
-
-      row.querySelectorAll('[data-id^="tmp_"]').forEach(el => {
-        el.dataset.id = realId;
-      });
-
+      row.querySelectorAll('[data-id^="tmp_"]').forEach(el => { el.dataset.id = realId; });
       row.classList.remove('opacity-60', 'optimistic-pending');
       const spinner = row.querySelector('.opt-spinner');
       if (spinner) spinner.remove();
@@ -241,16 +276,13 @@
     async function submitQuick() {
       const text = input.value.trim();
       if (!text || isSubmitting) return;
-
       isSubmitting = true;
 
-      // Snapshot FormData and body BEFORE clearing input
       const formData = new FormData(form);
       const body = new URLSearchParams();
       for (const [k, v] of formData.entries()) body.append(k, v);
       const savedText = text;
 
-      // Build and insert optimistic row immediately
       const tempId = makeTempId();
       const list = document.getElementById('collectList');
       const empty = document.getElementById('collectEmpty');
@@ -263,7 +295,6 @@
       attachSendHandlers(row);
       attachDeleteHandlers(row);
 
-      // Unblock the user immediately
       input.value = '';
       input.focus();
       isSubmitting = false;
@@ -274,34 +305,20 @@
           headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
           body,
         });
-
         let data = null;
-        try {
-          data = await r.json();
-        } catch {
-          throw new Error('bad_payload');
-        }
-
-        if (!r.ok || !data?.ok) {
-          const msg = String(data?.message || data?.error || 'No se pudo guardar el item.');
-          throw new Error(msg);
-        }
-
+        try { data = await r.json(); } catch { throw new Error('bad_payload'); }
+        if (!r.ok || !data?.ok) throw new Error(String(data?.message || data?.error || 'No se pudo guardar.'));
         if (data.deduped) {
-          // Remove optimistic row — item already exists
           row.style.transition = 'opacity 0.25s, transform 0.25s';
           row.style.opacity = '0';
           row.style.transform = 'translateX(-16px)';
           setTimeout(() => row.remove(), 280);
-          toast.info('Ese item ya estaba en Collect');
+          if (typeof toast !== 'undefined') toast.info('Ese item ya estaba en Collect');
           return;
         }
-
         if (!data?.item) throw new Error('bad_payload');
-
         finalizeRow(row, data.item);
       } catch (err) {
-        // Rollback: animate row out and restore input
         row.style.transition = 'opacity 0.25s, transform 0.25s';
         row.style.opacity = '0';
         row.style.transform = 'translateX(-16px)';
@@ -310,21 +327,15 @@
           const visibleRows = list ? list.querySelectorAll('.optimistic-pending, .collect-text-row:not(.hidden)') : [];
           if (!visibleRows.length && empty) empty.classList.remove('hidden');
         }, 280);
-
         input.value = savedText;
         input.focus();
-        const msg = String(err?.message || 'No se pudo guardar el item.');
-        toast.error(msg);
+        if (typeof toast !== 'undefined') toast.error(String(err?.message || 'No se pudo guardar.'));
       }
     }
 
     addBtn.addEventListener('click', submitQuick);
-
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        submitQuick();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQuick(); }
     });
 
     attachEditHandlers();

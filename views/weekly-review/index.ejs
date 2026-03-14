@@ -1,0 +1,100 @@
+<div class="space-y-6 max-w-2xl mx-auto">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-surface-900 dark:text-surface-50">Revisión Semanal</h1>
+      <p class="text-sm text-surface-500 dark:text-surface-400 mt-0.5">El corazón de GTD — revisa, limpia y planifica.</p>
+    </div>
+    <% if (streak > 0) { %>
+    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+      <span class="text-lg">🔥</span>
+      <span class="text-sm font-bold text-amber-700 dark:text-amber-300"><%= streak %> semana<%= streak === 1 ? '' : 's' %></span>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- Last review info -->
+  <% if (lastReview) { %>
+  <div class="card p-4 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div class="flex-1">
+      <div class="text-sm font-medium text-surface-900 dark:text-surface-100">
+        Última revisión: hace <strong><%= daysSinceLast %> día<%= daysSinceLast === 1 ? '' : 's' %></strong>
+      </div>
+      <div class="text-xs text-surface-500 dark:text-surface-400">
+        <%= new Date(lastReview.completedAt).toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+      </div>
+    </div>
+    <% if (daysSinceLast > 7) { %>
+    <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">¡Es hora!</span>
+    <% } %>
+  </div>
+  <% } else { %>
+  <div class="card p-4 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div>
+      <div class="text-sm font-medium text-surface-900 dark:text-surface-100">Primera revisión</div>
+      <div class="text-xs text-surface-500 dark:text-surface-400">Comienza tu racha de revisiones semanales.</div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- In-progress review -->
+  <% if (inProgress) { %>
+  <div class="card p-4 border-brand-200 dark:border-brand-700 bg-brand-50/50 dark:bg-brand-900/10">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <div class="text-sm font-semibold text-brand-700 dark:text-brand-300">Revisión en progreso</div>
+        <div class="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
+          Paso <%= inProgress.currentStep || 1 %> de 6 · Iniciada <%= new Date(inProgress.startedAt).toLocaleDateString('es') %>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <a href="/weekly-review/<%= inProgress.id %>/step/<%= inProgress.currentStep || 1 %>" class="btn-primary text-sm">Continuar →</a>
+        <form method="POST" action="/weekly-review/<%= inProgress.id %>/abandon">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn-ghost text-sm text-surface-400">Abandonar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Steps overview -->
+  <div class="card p-5">
+    <h2 class="text-sm font-semibold text-surface-700 dark:text-surface-300 mb-4">Los 6 pasos</h2>
+    <ol class="space-y-3">
+      <% const stepDefs = [
+        { n: 1, icon: '📥', title: 'Limpiar bandeja', desc: 'Procesa todo en Collect' },
+        { n: 2, icon: '🧩', title: 'Revisar proyectos', desc: 'Desglosar sin próximo paso claro' },
+        { n: 3, icon: '🤝', title: 'Revisar delegados', desc: 'Seguimiento de Delegar' },
+        { n: 4, icon: '🗓️', title: 'Próximos 7 días', desc: 'Revisar Agendar' },
+        { n: 5, icon: '🧠', title: 'Vaciado mental', desc: 'Captura todo lo que queda' },
+        { n: 6, icon: '🎯', title: 'Marcar completo', desc: 'Celebra y registra tu racha' },
+      ]; %>
+      <% for (const s of stepDefs) { %>
+      <li class="flex items-center gap-3 text-sm">
+        <span class="text-lg w-7 text-center"><%= s.icon %></span>
+        <div>
+          <span class="font-medium text-surface-800 dark:text-surface-200"><%= s.title %></span>
+          <span class="text-surface-500 dark:text-surface-400"> — <%= s.desc %></span>
+        </div>
+      </li>
+      <% } %>
+    </ol>
+  </div>
+
+  <!-- CTA -->
+  <% if (!inProgress) { %>
+  <form method="POST" action="/weekly-review/start">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <button type="submit" class="btn-primary w-full justify-center py-3 text-base">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Iniciar revisión semanal
+    </button>
+  </form>
+  <% } %>
+</div>

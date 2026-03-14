@@ -1,0 +1,58 @@
+<div class="max-w-lg mx-auto text-center space-y-6 py-8">
+  <!-- Celebration -->
+  <div class="flex justify-center">
+    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-5xl shadow-lg">
+      🎯
+    </div>
+  </div>
+
+  <div>
+    <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-50">¡Revisión completada!</h1>
+    <p class="text-surface-600 dark:text-surface-400 mt-2 leading-relaxed">
+      Tu sistema GTD está al día. Tienes la mente despejada para enfocarte en lo que importa.
+    </p>
+  </div>
+
+  <!-- Streak badge -->
+  <% if (streak > 0) { %>
+  <div class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800">
+    <span class="text-4xl">🔥</span>
+    <div class="text-left">
+      <div class="text-2xl font-bold text-amber-700 dark:text-amber-300"><%= streak %> semana<%= streak === 1 ? '' : 's' %> seguida<%= streak === 1 ? '' : 's' %></div>
+      <div class="text-sm text-amber-600 dark:text-amber-400">¡Sigue así!</div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Stats -->
+  <div class="card p-4 text-left">
+    <div class="grid grid-cols-2 gap-3 text-sm">
+      <div>
+        <div class="text-surface-500 dark:text-surface-400 text-xs uppercase tracking-wide font-medium mb-1">Completada</div>
+        <div class="font-semibold text-surface-900 dark:text-surface-100">
+          <%= review.completedAt ? new Date(review.completedAt).toLocaleDateString('es', { weekday: 'long', month: 'long', day: 'numeric' }) : '—' %>
+        </div>
+      </div>
+      <div>
+        <div class="text-surface-500 dark:text-surface-400 text-xs uppercase tracking-wide font-medium mb-1">Duración</div>
+        <div class="font-semibold text-surface-900 dark:text-surface-100">
+          <%
+            const startMs = review.startedAt ? new Date(review.startedAt).getTime() : 0;
+            const endMs = review.completedAt ? new Date(review.completedAt).getTime() : Date.now();
+            const durationMin = Math.max(1, Math.round((endMs - startMs) / 60000));
+          %>
+          ~<%= durationMin %> min
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="flex flex-col sm:flex-row gap-3 justify-center">
+    <a href="/" class="btn-primary py-2.5 px-6 text-sm justify-center">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Ir al Dashboard
+    </a>
+    <a href="/weekly-review" class="btn-secondary py-2.5 px-6 text-sm justify-center">Ver historial</a>
+  </div>
+</div>

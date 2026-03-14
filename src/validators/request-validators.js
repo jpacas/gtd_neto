@@ -33,3 +33,25 @@ export function sanitizeIntegerField(raw, { field = 'value', min = 1, max = 100,
   if (n < min || n > max) throw new RequestValidationError(`${field} must be between ${min} and ${max}`);
   return n;
 }
+
+// Context field: @word format or empty
+export function sanitizeContextField(raw, sanitizeInput) {
+  const value = sanitizeInput(String(raw || '')).trim();
+  if (!value) return null;
+  // Must be @word format (1-30 chars after @, letters/digits/hyphens)
+  if (!/^@[a-záéíóúñA-ZÁÉÍÓÚÑ0-9_-]{1,30}$/.test(value)) {
+    throw new RequestValidationError('context must be in @palabra format');
+  }
+  return value.toLowerCase();
+}
+
+// Area field: simple word (no @ prefix), 1-30 chars
+export function sanitizeAreaField(raw, sanitizeInput) {
+  const value = sanitizeInput(String(raw || '')).trim();
+  if (!value) return null;
+  if (value.length > 30) throw new RequestValidationError('area exceeds max length 30');
+  if (!/^[a-záéíóúñA-ZÁÉÍÓÚÑ0-9 _-]+$/.test(value)) {
+    throw new RequestValidationError('area contains invalid characters');
+  }
+  return value.toLowerCase();
+}

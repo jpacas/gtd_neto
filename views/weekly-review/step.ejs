@@ -1,0 +1,98 @@
+<div class="space-y-5 max-w-2xl mx-auto">
+  <!-- Review context banner for navigation back -->
+  <% if (typeof reviewContext !== 'undefined' && reviewContext) { %>
+  <div class="review-banner rounded-xl">
+    <span>← En Revisión Semanal · Paso <%= stepN %></span>
+    <a href="/weekly-review/<%= reviewId %>/step/<%= stepN %>" class="text-white/80 hover:text-white text-xs underline">Volver al review</a>
+  </div>
+  <% } %>
+
+  <!-- Progress bar -->
+  <div class="flex items-center justify-between gap-1">
+    <% for (const s of steps) { %>
+      <% const isDone = (review.steps || {})[String(s.n)]?.status === 'done'; %>
+      <% const isActive = s.n === stepN; %>
+      <div class="flex-1 flex flex-col items-center gap-1">
+        <div class="<%= isDone ? 'progress-dot-done' : isActive ? 'progress-dot-active' : 'progress-dot' %>"></div>
+        <span class="text-[10px] text-surface-400 dark:text-surface-500 hidden sm:block"><%= s.n %></span>
+      </div>
+      <% if (s.n < steps.length) { %>
+      <div class="h-px bg-surface-200 dark:bg-surface-700 flex-1 max-w-[30px]"></div>
+      <% } %>
+    <% } %>
+  </div>
+
+  <!-- Step card -->
+  <div class="review-step <%= stepStatus?.status === 'done' ? 'review-step-done' : '' %>">
+    <div class="review-step-header">
+      <span class="review-step-icon"><%= step.icon %></span>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="text-base font-semibold text-surface-900 dark:text-surface-100"><%= step.title %></h2>
+          <span class="text-xs text-surface-400 dark:text-surface-500">Paso <%= stepN %> / <%= totalSteps %></span>
+        </div>
+        <p class="text-sm text-surface-600 dark:text-surface-400 mt-1 leading-relaxed"><%= step.description %></p>
+      </div>
+    </div>
+
+    <!-- Check result -->
+    <% if (checkResult && checkResult.message) { %>
+    <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm <%= checkResult.ok ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' %>">
+      <% if (checkResult.ok) { %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <% } else { %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <% } %>
+      <%= checkResult.message %>
+    </div>
+    <% } %>
+
+    <!-- Action link (go to the relevant section) -->
+    <% if (step.actionHref) { %>
+    <a href="<%= step.actionHref %>?reviewContext=true&reviewId=<%= reviewId %>" class="btn-secondary text-sm self-start">
+      <%= step.actionLabel %> →
+    </a>
+    <% } %>
+
+    <!-- Brain dump capture (step 5) -->
+    <% if (step.hasCapture) { %>
+    <form method="POST" action="/weekly-review/<%= reviewId %>/step/5/complete" class="space-y-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label class="text-sm font-medium text-surface-700 dark:text-surface-300">¿Algo más en tu cabeza?</label>
+      <textarea name="capture" rows="3" class="input-base resize-none" placeholder="Escribe una idea o tarea pendiente (se agregará a Collect)..."></textarea>
+      <div class="flex gap-2">
+        <button type="submit" class="btn-primary">Agregar y continuar</button>
+        <a href="/weekly-review/<%= reviewId %>/step/<%= stepN + 1 %>" class="btn-ghost">Saltar</a>
+      </div>
+    </form>
+    <% } %>
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex items-center justify-between gap-3">
+    <% if (stepN > 1) { %>
+    <a href="/weekly-review/<%= reviewId %>/step/<%= stepN - 1 %>" class="btn-ghost text-sm">
+      ← Anterior
+    </a>
+    <% } else { %>
+    <a href="/weekly-review" class="btn-ghost text-sm">← Volver</a>
+    <% } %>
+
+    <% if (!step.hasCapture) { %>
+    <form method="POST" action="/weekly-review/<%= reviewId %>/step/<%= stepN %>/complete">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="btn-primary">
+        <%= stepStatus?.status === 'done' ? 'Siguiente' : 'Completar paso' %> →
+      </button>
+    </form>
+    <% } %>
+  </div>
+
+  <!-- Abandon link -->
+  <div class="text-center">
+    <form method="POST" action="/weekly-review/<%= reviewId %>/abandon" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="text-xs text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300">Abandonar revisión</button>
+    </form>
+  </div>
+</div>

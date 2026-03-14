@@ -1,0 +1,34 @@
+<%
+  // Expected locals: contexts (array), areas (array), activeContext, activeArea, basePath
+  const _contexts = typeof contexts !== 'undefined' ? contexts : [];
+  const _areas = typeof areas !== 'undefined' ? areas : [];
+  const _activeCtx = typeof activeContext !== 'undefined' ? activeContext : '';
+  const _activeArea = typeof activeArea !== 'undefined' ? activeArea : '';
+  const _base = typeof basePath !== 'undefined' ? basePath : '';
+%>
+<% if (_contexts.length > 0 || _areas.length > 0) { %>
+<div class="flex items-center gap-2 flex-wrap">
+  <span class="text-xs text-surface-500 dark:text-surface-400 font-medium shrink-0">Filtrar:</span>
+
+  <% if (_contexts.length > 0) { %>
+    <a href="<%= _base %>" class="<%= !_activeCtx ? 'filter-chip-active' : 'filter-chip' %>">Todos</a>
+    <% for (const ctx of _contexts) { %>
+      <a href="<%= _base %>?context=<%= encodeURIComponent(ctx) %><%= _activeArea ? '&area=' + encodeURIComponent(_activeArea) : '' %>" class="<%= _activeCtx === ctx ? 'filter-chip-active' : 'filter-chip' %>">
+        <%= ctx %>
+      </a>
+    <% } %>
+  <% } %>
+
+  <% if (_contexts.length > 0 && _areas.length > 0) { %>
+    <div class="w-px h-4 bg-surface-200 dark:bg-surface-700 shrink-0"></div>
+  <% } %>
+
+  <% if (_areas.length > 0) { %>
+    <% for (const area of _areas) { %>
+      <a href="<%= _base %>?area=<%= encodeURIComponent(area) %><%= _activeCtx ? '&context=' + encodeURIComponent(_activeCtx) : '' %>" class="<%= _activeArea === area ? 'filter-chip-active' : 'filter-chip' %>">
+        <%= area %>
+      </a>
+    <% } %>
+  <% } %>
+</div>
+<% } %>

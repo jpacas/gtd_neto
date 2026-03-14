@@ -1,0 +1,47 @@
+<div class="space-y-4">
+  <div class="flex items-center gap-2">
+    <a href="/settings" class="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-xl font-bold text-surface-900 dark:text-surface-50">Áreas de Vida</h1>
+  </div>
+
+  <!-- System areas (read-only) -->
+  <div class="card p-5">
+    <h2 class="text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3">Áreas del sistema</h2>
+    <div class="flex flex-wrap gap-2">
+      <% for (const area of systemAreas) { %>
+        <span class="area-badge"><%= area %></span>
+      <% } %>
+    </div>
+    <p class="text-xs text-surface-400 dark:text-surface-500 mt-2">Estas áreas están disponibles para todos los usuarios.</p>
+  </div>
+
+  <!-- Custom areas -->
+  <div class="card p-5">
+    <h2 class="text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3">Áreas personalizadas</h2>
+
+    <% if (customAreas.length > 0) { %>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <% for (const area of customAreas) { %>
+          <div class="flex items-center gap-1.5">
+            <span class="area-badge"><%= area.value %></span>
+            <form method="POST" action="/settings/areas/<%= area.id %>/delete" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="text-surface-300 hover:text-red-500 transition-colors" aria-label="Eliminar área">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </form>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/settings/areas/add" class="flex gap-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="text" name="area" placeholder="mi-área" class="input-base max-w-xs" maxlength="30" />
+      <button type="submit" class="btn-primary shrink-0">Agregar</button>
+    </form>
+    <p class="text-xs text-surface-400 dark:text-surface-500 mt-1.5">Nombre del área (ej: hogar, emprendimiento)</p>
+  </div>
+</div>
