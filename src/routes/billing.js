@@ -17,6 +17,7 @@ export function createBillingRoutes({ renderPage, APP_URL }) {
     return renderPage(res, 'pricing', {
       title: 'Planes — GTD_Neto',
       hideAppNav: !req.auth?.user,
+      authUser: req.auth?.user || null,
       reason,
       cancelled,
       trialDays: 14,
@@ -161,7 +162,7 @@ export function createBillingRoutes({ renderPage, APP_URL }) {
 
   // GET /billing/success — post-checkout redirect
   router.get('/billing/success', (req, res) => {
-    return renderPage(res, 'billing-success', { title: '¡Suscripción activada! — GTD_Neto' });
+    return renderPage(res, 'billing-success', { title: '¡Suscripción activada! — GTD_Neto', authUser: req.auth?.user || null });
   });
 
   // GET /billing/cancel — user cancelled checkout, send back to pricing
