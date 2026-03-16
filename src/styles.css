@@ -8,204 +8,67 @@
     --color-surface: 255 255 255;
     --color-border: 226 232 240;
     --color-text: 15 23 42;
-    --color-primary: 14 135 240;
-  }
-
-  .dark {
-    --color-bg: 15 23 42;
-    --color-surface: 30 41 59;
-    --color-border: 51 65 85;
-    --color-text: 241 245 249;
-    --color-primary: 14 135 240;
+    --color-primary: 37 99 235;
   }
 
   html {
     color-scheme: light;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
-  html.dark {
-    color-scheme: dark;
-  }
-
-  body {
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer components {
-  /* Cards */
   .card {
-    @apply rounded-xl border p-4 bg-white dark:bg-surface-800 dark:border-surface-700;
+    @apply rounded-xl border p-4 bg-white border-slate-200;
   }
 
-  .card-hover {
-    @apply card hover:shadow-md hover:border-brand-200 dark:hover:border-brand-700 transition-all duration-200;
-  }
-
-  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm transition-colors;
   }
 
   .btn-primary {
-    @apply btn bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 shadow-sm;
+    @apply btn bg-blue-600 text-white hover:bg-blue-700;
   }
 
   .btn-secondary {
-    @apply btn border border-surface-200 bg-white hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-800 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-200;
+    @apply btn border border-slate-300 bg-white hover:bg-slate-50;
   }
 
-  .btn-ghost {
-    @apply btn hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-400;
-  }
-
-  .btn-danger {
-    @apply btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800;
-  }
-
-  /* Inputs */
   .input-base {
-    @apply w-full border border-surface-300 dark:border-surface-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors;
+    @apply w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white;
   }
 
   /* Navigation */
   .nav-link {
-    @apply relative px-2.5 py-1.5 rounded-lg text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 transition-colors whitespace-nowrap font-medium;
+    @apply px-2.5 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap;
   }
 
   .nav-link-mobile {
-    @apply flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors font-medium;
+    @apply flex items-center px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-100 transition-colors;
   }
 
   .nav-active {
-    @apply bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-semibold;
-  }
-
-  /* Nav count badge */
-  .nav-badge {
-    @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300;
-  }
-
-  .nav-badge-alert {
-    @apply nav-badge bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300;
-  }
-
-  /* Filter chips */
-  .filter-chip {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:border-brand-300 dark:hover:border-brand-600 hover:text-brand-600 dark:hover:text-brand-400 transition-all cursor-pointer;
-  }
-
-  .filter-chip-active {
-    @apply filter-chip border-brand-400 dark:border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300;
-  }
-
-  /* Context badge */
-  .context-badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700;
-  }
-
-  /* Area badge */
-  .area-badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700;
-  }
-
-  /* Stat cards */
-  .stat-card {
-    @apply card flex flex-col gap-1 p-4;
-  }
-
-  .stat-card-value {
-    @apply text-2xl font-bold text-surface-900 dark:text-surface-50 tabular-nums;
-  }
-
-  .stat-card-label {
-    @apply text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wide;
-  }
-
-  /* Review step */
-  .review-step {
-    @apply card p-5 flex flex-col gap-3;
-  }
-
-  .review-step-header {
-    @apply flex items-start gap-3;
-  }
-
-  .review-step-icon {
-    @apply text-2xl flex-shrink-0 mt-0.5;
-  }
-
-  .review-step-done {
-    @apply opacity-60 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10;
-  }
-
-  /* Progress dots (weekly review) */
-  .progress-dot {
-    @apply w-2.5 h-2.5 rounded-full bg-surface-300 dark:bg-surface-600 transition-all;
-  }
-
-  .progress-dot-done {
-    @apply progress-dot bg-green-500 dark:bg-green-400;
-  }
-
-  .progress-dot-active {
-    @apply progress-dot bg-brand-500 scale-125;
-  }
-
-  /* Command palette */
-  .cmd-palette-overlay {
-    @apply fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-24 px-4;
-  }
-
-  .cmd-palette-box {
-    @apply w-full max-w-xl bg-white dark:bg-surface-900 rounded-2xl shadow-2xl border border-surface-200 dark:border-surface-700 overflow-hidden animate-scale-in;
-  }
-
-  .cmd-palette-input {
-    @apply w-full px-4 py-3.5 text-base bg-transparent border-b border-surface-200 dark:border-surface-700 focus:outline-none text-surface-900 dark:text-surface-100 placeholder:text-surface-400;
-  }
-
-  .cmd-palette-item {
-    @apply flex items-center gap-3 px-4 py-2.5 text-sm text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 cursor-pointer transition-colors;
-  }
-
-  .cmd-palette-item-active {
-    @apply cmd-palette-item bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300;
-  }
-
-  /* FAB - Floating Action Button */
-  .fab {
-    @apply fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-brand-500 text-white shadow-lg hover:bg-brand-600 hover:shadow-xl active:scale-95 transition-all duration-150 flex items-center justify-center text-2xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-400;
+    @apply bg-blue-50 text-blue-700 font-medium;
   }
 
   /* Empty states */
   .empty-state {
-    @apply flex flex-col items-center justify-center text-center py-12 px-4;
-  }
-
-  /* Item aging warning */
-  .item-aging {
-    @apply border-l-2 border-amber-400 dark:border-amber-500;
-  }
-
-  /* Review banner (sticky in list views during weekly review) */
-  .review-banner {
-    @apply sticky top-14 z-10 flex items-center justify-between gap-2 px-4 py-2.5 bg-brand-500 text-white text-sm font-medium shadow-md;
+    @apply flex flex-col items-center justify-center text-center py-10 px-4;
   }
 }
 
-/* Animations */
+/* Animaciones personalizadas */
 @layer utilities {
   .animate-spin {
     animation: spin 1s linear infinite;
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .fade-in {
@@ -213,8 +76,12 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .slide-in-right {
@@ -222,27 +89,25 @@
   }
 
   @keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-
-  .slide-up {
-    animation: slideUp 0.2s ease-out;
-  }
-
-  .scale-in {
-    animation: scaleIn 0.15s ease-out;
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 }
 
-/* Smooth transitions globally */
+/* Transiciones suaves globales */
 @layer base {
   * {
     @apply transition-colors duration-150;
   }
 
   button, a {
-    @apply transition-all duration-150;
+    @apply transition-colors duration-150;
   }
 
   @media (prefers-reduced-motion: reduce) {

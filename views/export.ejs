@@ -1,13 +1,13 @@
 <div class="mb-6">
-  <h2 class="text-lg font-semibold dark:text-slate-100">📥 Exportar / Importar Datos</h2>
-  <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Realiza backups o migra tus datos</p>
+  <h2 class="text-lg font-semibold">📥 Exportar / Importar Datos</h2>
+  <p class="text-sm text-slate-600 mt-1">Realiza backups o migra tus datos</p>
 </div>
 
 <div class="grid md:grid-cols-2 gap-6">
   <!-- Exportar -->
-  <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5">
-    <h3 class="text-base font-semibold mb-3 dark:text-slate-100">📤 Exportar Datos</h3>
-    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+  <div class="bg-white border rounded-xl p-5">
+    <h3 class="text-base font-semibold mb-3">📤 Exportar Datos</h3>
+    <p class="text-sm text-slate-600 mb-4">
       Descarga todos tus datos en formato JSON o CSV
     </p>
 
@@ -22,42 +22,42 @@
 
       <a
         href="/export/csv"
-        class="block w-full text-center px-4 py-3 rounded-lg border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        class="block w-full text-center px-4 py-3 rounded-lg border hover:bg-slate-50 transition-colors"
       >
         <span class="text-lg">📊</span> Descargar CSV
-        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Compatible con Excel y Google Sheets</div>
+        <div class="text-xs text-slate-500 mt-1">Compatible con Excel y Google Sheets</div>
       </a>
     </div>
 
-    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-blue-800 dark:text-blue-200">
+    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
       <strong>💡 Tip:</strong> Exporta regularmente tus datos como backup de seguridad
     </div>
   </div>
 
   <!-- Importar -->
-  <div class="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5">
-    <h3 class="text-base font-semibold mb-3 dark:text-slate-100">📥 Importar Datos</h3>
-    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+  <div class="bg-white border rounded-xl p-5">
+    <h3 class="text-base font-semibold mb-3">📥 Importar Datos</h3>
+    <p class="text-sm text-slate-600 mb-4">
       Restaura un backup o migra desde otro sistema
     </p>
 
     <div class="space-y-3">
       <div>
-        <label class="block text-sm font-medium mb-2 dark:text-slate-100">Seleccionar archivo JSON</label>
+        <label class="block text-sm font-medium mb-2">Seleccionar archivo JSON</label>
         <input
           type="file"
           id="importFile"
           accept=".json"
-          class="block w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-200 hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
+          class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50:bg-blue-900 file:text-blue-700:text-blue-200 hover:file:bg-blue-100:file:bg-blue-800"
         />
       </div>
       <% if (needApiKey) { %>
         <div>
-          <label class="block text-sm font-medium mb-2 dark:text-slate-100">API key (solo para importación por header)</label>
+          <label class="block text-sm font-medium mb-2">API key (solo para importación por header)</label>
           <input
             type="password"
             id="importApiKey"
-            class="block w-full border dark:border-slate-700 dark:bg-slate-900 rounded-lg px-3 py-2 text-sm"
+            class="block w-full border rounded-lg px-3 py-2 text-sm"
             placeholder="Ingresa tu API key"
           />
         </div>
@@ -74,7 +74,7 @@
 
     <div id="importResult" class="mt-4 hidden"></div>
 
-    <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-200">
+    <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
       <strong>⚠️ Importante:</strong> La importación NO sobrescribe datos existentes, solo agrega items nuevos
     </div>
   </div>
@@ -82,7 +82,7 @@
 
 <!-- Volver -->
 <div class="mt-6">
-  <a href="/" class="inline-flex items-center px-4 py-2 rounded-lg border dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm">
+  <a href="/" class="inline-flex items-center px-4 py-2 rounded-lg border bg-white hover:bg-slate-50 transition-colors text-sm">
     ← Volver al Dashboard
   </a>
 </div>
@@ -122,7 +122,7 @@
       const result = await response.json();
 
       if (result.ok) {
-        resultDiv.className = 'mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-800 dark:text-emerald-200';
+        resultDiv.className = 'mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800';
         resultDiv.textContent = `✓ Importación exitosa. Se importaron ${Number(result.imported || 0)} items nuevos.`;
         toast.success(`${result.imported} items importados correctamente`);
 
@@ -133,7 +133,7 @@
         throw new Error(result.error || 'Error desconocido');
       }
     } catch (err) {
-      resultDiv.className = 'mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-800 dark:text-red-200';
+      resultDiv.className = 'mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800';
       resultDiv.textContent = `✕ Error: ${String(err?.message || 'Error desconocido')}`;
       toast.error('Error al importar datos');
     } finally {
