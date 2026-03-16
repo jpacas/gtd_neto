@@ -9,7 +9,7 @@ import compression from 'compression';
 import sanitizeHtml from 'sanitize-html';
 import { timingSafeEqual } from 'node:crypto';
 
-import { loadDb, loadItemsForList, loadItemsByStatus, loadItemById, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem, findRecentDuplicate, upsertSubscription } from './lib/store.js';
+import { loadDb, loadItemsForList, loadItemsByStatus, loadItemById, saveDb, saveItem, deleteItemById, isStoreSupabaseMode, newItem, updateItem, findRecentDuplicate, upsertSubscription, getUserSubscription } from './lib/store.js';
 import {
   DESTINATIONS,
   destinationByKey,
@@ -651,6 +651,23 @@ app.post('/auth/logout', (req, res) => {
   res.clearCookie('sb_refresh_token', clearAuthCookieOptions());
   res.clearCookie('csrf_token', clearCsrfCookieOptions());
   return res.redirect('/');
+});
+
+app.get('/profile', async (req, res) => {
+  if (!USE_SUPABASE || !req.auth?.user) return res.redirect('/');
+
+  let subscription = null;
+  try {
+    subscription = await getUserSubscription(req.auth.user.id);
+  } catch (err) {
+    console.warn('[profile] Could not load subscription:', err.message);
+  }
+
+  return renderPage(res, 'profile', {
+    title: 'Mi perfil — GTD_Neto',
+    authUser: req.auth.user,
+    subscription,
+  });
 });
 
 app.get('/reset-password', async (req, res) => {
