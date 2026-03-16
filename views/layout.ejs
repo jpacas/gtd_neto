@@ -42,6 +42,9 @@
           <a class="nav-link" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
           <a class="nav-link" href="/terminado" data-page="/terminado">🎯 Terminado</a>
           <a class="nav-link" href="/stats" data-page="/stats">📈 Stats</a>
+          <a class="nav-link" href="/weekly-review" data-page="/weekly-review">📋 Revisión
+            <% if (locals.daysSinceReview != null && locals.daysSinceReview > 7) { %><span class="ml-0.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block align-middle"></span><% } %>
+          </a>
         </nav>
 
         <!-- Right side: logout + hamburger -->
@@ -81,6 +84,7 @@
         <a class="nav-link-mobile" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
         <a class="nav-link-mobile" href="/terminado" data-page="/terminado">🎯 Terminado</a>
         <a class="nav-link-mobile" href="/stats" data-page="/stats">📈 Stats</a>
+        <a class="nav-link-mobile" href="/weekly-review" data-page="/weekly-review">📋 Revisión Semanal</a>
       </div>
     </div>
   </header>
@@ -130,6 +134,39 @@
       });
     })();
   </script>
+
+  <!-- Command Palette (Cmd+K) -->
+  <script nonce="<%= cspNonce %>" src="/public/js/command-palette.js"></script>
+
+  <!-- FAB — Captura rápida universal -->
+  <% if (!hideAppNav) { %>
+  <button id="fab-capture"
+    class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-150 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+    aria-label="Captura rápida"
+    onclick="document.getElementById('fab-dialog').showModal()">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+  </button>
+
+  <dialog id="fab-dialog" class="rounded-xl shadow-2xl border border-slate-200 bg-white w-full max-w-md p-0 backdrop:bg-black/50">
+    <form method="POST" action="/collect/add">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="p-4">
+        <h2 class="text-sm font-semibold text-slate-700 mb-3">Captura rápida</h2>
+        <textarea name="input" rows="3" autofocus
+          class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
+          placeholder="¿Qué tienes en mente?"></textarea>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-4 pb-4">
+        <button type="button" onclick="document.getElementById('fab-dialog').close()"
+          class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 transition-colors">Cancelar</button>
+        <button type="submit"
+          class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">Agregar</button>
+      </div>
+    </form>
+  </dialog>
+  <% } %>
 
   <!-- PWA Service Worker -->
   <script nonce="<%= cspNonce %>">

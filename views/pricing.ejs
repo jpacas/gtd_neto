@@ -1,0 +1,62 @@
+<div class="max-w-lg mx-auto py-10 px-4">
+
+  <% if (reason === 'trial_expired') { %>
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-sm font-medium">
+      Tu prueba gratuita de 14 días ha terminado. Suscríbete para seguir usando GTD_Neto.
+    </div>
+  <% } else if (reason === 'subscription_ended') { %>
+    <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">
+      Tu suscripción ha sido cancelada. Reactívala para acceder a tu cuenta.
+    </div>
+  <% } else if (cancelled) { %>
+    <div class="mb-6 p-4 rounded-xl bg-slate-100 border border-slate-300 text-slate-700 text-sm">
+      Pago cancelado. Puedes suscribirte cuando estés listo.
+    </div>
+  <% } %>
+
+  <div class="text-center mb-8">
+    <h1 class="text-2xl font-bold text-slate-900">Un plan simple, sin sorpresas</h1>
+    <p class="mt-2 text-slate-600 text-sm">Prueba 14 días gratis. Sin tarjeta de crédito.</p>
+  </div>
+
+  <!-- Plan card -->
+  <div class="bg-white border-2 border-blue-500 rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-blue-600 text-white text-center py-3 text-sm font-semibold tracking-wide">
+      PLAN PRO
+    </div>
+    <div class="p-8 text-center">
+      <div class="text-5xl font-bold text-slate-900">$9</div>
+      <div class="text-slate-500 text-sm mt-1">por mes · cancela cuando quieras</div>
+
+      <ul class="mt-6 space-y-3 text-sm text-slate-700 text-left">
+        <li class="flex items-center gap-2"><span class="text-green-500 font-bold">✓</span> GTD completo: Hacer, Agendar, Delegar, Desglosar</li>
+        <li class="flex items-center gap-2"><span class="text-green-500 font-bold">✓</span> Revisión Semanal guiada</li>
+        <li class="flex items-center gap-2"><span class="text-green-500 font-bold">✓</span> Exporta tus datos cuando quieras (JSON / CSV)</li>
+        <li class="flex items-center gap-2"><span class="text-green-500 font-bold">✓</span> Funciona en móvil y escritorio (PWA)</li>
+        <li class="flex items-center gap-2"><span class="text-green-500 font-bold">✓</span> Acceso completo desde el primer día</li>
+      </ul>
+
+      <% if (authUser) { %>
+        <a href="/billing/checkout"
+          class="mt-8 block w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base transition-colors shadow-sm text-center">
+          Suscribirme por $9/mes
+        </a>
+        <p class="mt-3 text-xs text-slate-500">Procesado de forma segura por Stripe.</p>
+      <% } else { %>
+        <a href="/signup"
+          class="mt-8 block w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base transition-colors shadow-sm text-center">
+          Crear cuenta — 14 días gratis
+        </a>
+        <p class="mt-3 text-xs text-slate-500">Ya tienes cuenta? <a href="/login" class="underline text-blue-600">Inicia sesión</a></p>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Guarantee -->
+  <div class="mt-6 text-center">
+    <p class="text-sm text-slate-500">
+      Cancela en cualquier momento desde tu cuenta. Sin preguntas.
+    </p>
+  </div>
+
+</div>

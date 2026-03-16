@@ -1,6 +1,37 @@
 <h2 class="text-lg font-semibold">Dashboard</h2>
 <p class="text-sm text-slate-600 mt-1">Vista general de todas las secciones del flujo GTD simplificado.</p>
 
+<div class="mt-4 flex flex-col gap-3">
+  <!-- Tu enfoque de hoy -->
+  <a href="/hoy" class="flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-xl p-4 hover:bg-blue-100 transition-colors">
+    <div class="text-3xl">🌅</div>
+    <div class="flex-1 min-w-0">
+      <div class="font-semibold text-blue-800 text-sm">Tu enfoque de hoy</div>
+      <div class="text-xs text-slate-500 mt-0.5">Ver próximas acciones y elementos agendados para hoy</div>
+    </div>
+    <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  </a>
+
+  <!-- Revisión Semanal CTA -->
+  <% if (locals.daysSinceReview !== undefined) { %>
+    <a href="/weekly-review" class="flex items-center gap-3 rounded-xl p-4 border transition-colors hover:shadow-sm <%= locals.daysSinceReview === null || locals.daysSinceReview > 7 ? 'bg-amber-50 border-amber-300 hover:bg-amber-100' : 'bg-white border-slate-200 hover:bg-slate-50' %>">
+      <span class="text-xl">📋</span>
+      <div class="flex-1 min-w-0">
+        <% if (locals.daysSinceReview === null) { %>
+          <div class="font-medium text-sm text-slate-800">Iniciar primera Revisión Semanal</div>
+        <% } else { %>
+          <div class="font-medium text-sm text-slate-800">Revisión Semanal</div>
+          <div class="text-xs text-slate-500 mt-0.5">
+            Última: hace <%= locals.daysSinceReview %> día<%= locals.daysSinceReview !== 1 ? 's' : '' %>
+            <% if (locals.weeklyStreak > 0) { %> · 🔥 <%= locals.weeklyStreak %> semana<%= locals.weeklyStreak !== 1 ? 's' : '' %><% } %>
+          </div>
+        <% } %>
+      </div>
+      <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
+  <% } %>
+</div>
+
 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
   <% for (const c of cards) { %>
     <a href="<%= c.href %>" class="bg-white border rounded-xl p-4 hover:bg-slate-50 transition-colors hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">

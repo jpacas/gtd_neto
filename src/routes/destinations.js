@@ -1,7 +1,9 @@
 import express from 'express';
 import { isStoreSupabaseMode, newItem, updateItem } from '../../lib/store.js';
-import { DESTINATIONS, evaluateActionability, withHacerMeta, withDesglosarMeta, randomId } from '../services/gtd-service.js';
+import { DESTINATIONS, SYSTEM_CONTEXTS, SYSTEM_AREAS, evaluateActionability, withHacerMeta, withDesglosarMeta, randomId } from '../services/gtd-service.js';
 import { RequestValidationError, sanitizeIdParam, sanitizeTextField, sanitizeIntegerField } from '../validators/request-validators.js';
+import { loadMetaByKind } from '../../lib/meta-store.js';
+import { getLastReviewInfo, calculateStreak } from '../services/weekly-review-service.js';
 
 export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReqItemsByStatus, loadReqItemById, saveReqDb, saveReqItem, deleteReqItem, requireApiKey, sanitizeInput, renderPage, APP_API_KEY, exportLimiter, validateAndNormalizeImportPayload, ImportValidationError }) {
   const router = express.Router();
@@ -32,6 +34,16 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
       { label: 'Terminado', count: counts.done, href: '/terminado', hint: 'Historial de completadas' },
     ];
 
+    // Weekly review info for dashboard CTA
+    try {
+      const owner = req.auth?.user?.id || process.env.SUPABASE_OWNER || 'default';
+      const allReviews = await loadMetaByKind('weekly_review', { owner });
+      const { daysSinceLast } = getLastReviewInfo(allReviews);
+      const streak = calculateStreak(allReviews.filter(r => r.completedAt));
+      res.locals.daysSinceReview = daysSinceLast;
+      res.locals.weeklyStreak = streak;
+    } catch {}
+
     return renderPage(res, 'dashboard', {
       title: 'Dashboard',
       cards,
@@ -44,6 +56,26 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
     try {
       const items = (await loadReqItemsByList(req, 'collect', { excludeDone: true }))
         .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+      // Provide contexts and areas for the send form
+      try {
+        const owner = req.auth?.user?.id || process.env.SUPABASE_OWNER || 'default';
+        const [customContexts, customAreas] = await Promise.all([
+          loadMetaByKind('context', { owner }),
+          loadMetaByKind('area', { owner }),
+        ]);
+        res.locals.allContexts = [
+          ...SYSTEM_CONTEXTS,
+          ...customContexts.map(c => c.value).filter(Boolean),
+        ];
+        res.locals.allAreas = [
+          ...SYSTEM_AREAS,
+          ...customAreas.map(a => a.value).filter(Boolean),
+        ];
+      } catch {
+        res.locals.allContexts = SYSTEM_CONTEXTS;
+        res.locals.allAreas = SYSTEM_AREAS;
+      }
 
       return await renderPage(res, 'collect', {
         title: 'Collect',
@@ -80,9 +112,12 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
       return Number(b.importance || 0) - Number(a.importance || 0);
     });
 
+    const totalEstimateMin = items.reduce((sum, i) => sum + Number(i.estimateMin || 0), 0);
+
     return renderPage(res, 'hacer', {
       title: 'Hacer',
       items,
+      totalEstimateMin,
       needApiKey: Boolean(APP_API_KEY),
       activeContext: context,
       activeArea: area,
@@ -206,9 +241,12 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
       return ad.localeCompare(bd);
     });
 
+    const totalEstimateMin = items.reduce((sum, i) => sum + Number(i.estimateMin || 0), 0);
+
     return renderPage(res, 'agendar', {
       title: 'Agendar',
       items,
+      totalEstimateMin,
       needApiKey: Boolean(APP_API_KEY),
       activeContext: context,
       activeArea: area,
@@ -300,6 +338,8 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
     }
     const groups = Array.from(groupsMap.entries()).map(([label, rows]) => ({ label, rows }));
 
+    const totalEstimateMin = items.reduce((sum, i) => sum + Number(i.estimateMin || 0), 0);
+
     return renderPage(res, 'delegar', {
       title: 'Delegar',
       items,
@@ -307,6 +347,7 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
       groupBy,
       ownerFilter: String(req.query?.owner || ''),
       error,
+      totalEstimateMin,
       needApiKey: Boolean(APP_API_KEY),
       activeContext: context,
       activeArea: area,

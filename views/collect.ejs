@@ -39,7 +39,11 @@
   <% } %>
 
   <% for (const it of items) { %>
-    <div class="px-3 py-2">
+    <%
+      const ageDays = Math.floor((Date.now() - new Date(it.createdAt || 0).getTime()) / 86400000);
+      const isAged = ageDays >= 7;
+    %>
+    <div class="px-3 py-2 <%= isAged ? 'border-l-2 border-l-amber-300 bg-amber-50/30' : '' %>">
       <div class="flex items-center justify-between gap-2">
         <form method="POST" action="/collect/<%= it.id %>/update" class="hidden flex-1 items-center gap-2 collect-edit-form" data-id="<%= it.id %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -49,6 +53,7 @@
 
         <div class="collect-text-row flex-1 min-w-0" data-id="<%= it.id %>">
           <span class="text-sm"><%= it.title || it.input %></span>
+          <% if (isAged) { %><span class="ml-1.5 text-[10px] text-amber-600" title="<%= ageDays %> días sin procesar">⏳ <%= ageDays %>d</span><% } %>
         </div>
 
         <div class="flex items-center gap-1 shrink-0">
@@ -65,13 +70,31 @@
         </div>
       <% } %>
 
-      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 flex flex-wrap items-center gap-1 collect-send-form" data-auto-loading="off">
+      <form method="POST" action="/collect/<%= it.id %>/send" class="mt-1.5 collect-send-form" data-auto-loading="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="destination" value="" />
-        <% const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' }; %>
-        <% for (const d of destinations) { %>
-          <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= destIcons[d.key] || '' %> <%= d.label %></button>
+        <% if (locals.allContexts?.length || locals.allAreas?.length) { %>
+          <div class="flex gap-2 mb-1.5">
+            <% if (locals.allContexts?.length) { %>
+              <select name="context" class="text-[11px] border rounded px-1.5 py-0.5 bg-white text-slate-600 flex-1">
+                <option value="">Contexto...</option>
+                <% for (const ctx of locals.allContexts) { %><option value="<%= ctx %>"><%= ctx %></option><% } %>
+              </select>
+            <% } %>
+            <% if (locals.allAreas?.length) { %>
+              <select name="area" class="text-[11px] border rounded px-1.5 py-0.5 bg-white text-slate-600 flex-1">
+                <option value="">Área...</option>
+                <% for (const area of locals.allAreas) { %><option value="<%= area %>"><%= area %></option><% } %>
+              </select>
+            <% } %>
+          </div>
         <% } %>
+        <div class="flex flex-wrap items-center gap-1">
+          <% const destIcons = { hacer: '✅', agendar: '🗓️', delegar: '🤝', desglosar: '🧩', 'no-hacer': '🚫' }; %>
+          <% for (const d of destinations) { %>
+            <button type="button" data-destination="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50"><%= destIcons[d.key] || '' %> <%= d.label %></button>
+          <% } %>
+        </div>
       </form>
     </div>
   <% } %>

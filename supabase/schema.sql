@@ -1,6 +1,29 @@
 -- GTD_Neto minimal persistence schema (single-table payload strategy)
 -- Run in Supabase SQL Editor
 
+-- Billing subscriptions (one row per user)
+create table if not exists public.user_subscriptions (
+  user_id            uuid primary key references auth.users(id) on delete cascade,
+  status             text not null default 'trialing',
+  -- trialing | active | past_due | canceled | expired
+  trial_ends_at      timestamptz not null default (now() + interval '14 days'),
+  stripe_customer_id     text,
+  stripe_subscription_id text,
+  current_period_end     timestamptz,
+  updated_at         timestamptz not null default now()
+);
+
+alter table public.user_subscriptions enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='user_subscriptions' and policyname='allow_all_temp'
+  ) then
+    create policy allow_all_temp on public.user_subscriptions for all using (true) with check (true);
+  end if;
+end$$;
+
 create table if not exists public.gtd_items (
   id text primary key,
   owner text not null default 'default',
