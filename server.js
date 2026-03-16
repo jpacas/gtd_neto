@@ -485,7 +485,7 @@ async function attachAuth(req, res, next) {
 function requireAuth(req, res, next) {
   if (!USE_SUPABASE) return next();
   if (req.auth?.user) return next();
-  return res.redirect('/login');
+  return res.redirect('/');
 }
 
 function renderPage(res, view, data) {
@@ -540,7 +540,7 @@ app.get('/login', async (req, res) => {
 app.get('/signup', async (req, res) => {
   if (!USE_SUPABASE) return res.redirect('/');
   if (req.auth?.user) return res.redirect('/');
-  return renderPage(res, 'signup', { title: 'Registro', needApiKey: false });
+  return renderPage(res, 'signup', { title: 'Registro', needApiKey: false, hideAppNav: true });
 });
 
 app.post('/auth/login', authLimiter, async (req, res) => {
@@ -613,7 +613,14 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
     }
   }
 
-  return res.redirect('/login?message=Cuenta creada. Revisa tu correo para confirmación si aplica.');
+  // If Supabase returned a session (email confirmation disabled), auto-login
+  if (signupData?.session) {
+    res.cookie('sb_access_token', signupData.session.access_token, authCookieOptions());
+    res.cookie('sb_refresh_token', signupData.session.refresh_token, authCookieOptions());
+    return res.redirect('/');
+  }
+
+  return res.redirect('/login?message=Cuenta creada. Revisa tu correo para confirmar.');
 });
 
 app.post('/auth/forgot', authLimiter, async (req, res) => {
@@ -634,7 +641,7 @@ app.post('/auth/forgot', authLimiter, async (req, res) => {
     return res.redirect('/login?message=Error de configuración. Contacta al administrador.');
   }
 
-  const redirectTo = `${APP_URL}/login?message=Contraseña actualizada. Ya puedes iniciar sesión.`;
+  const redirectTo = `${APP_URL}/reset-password`;
   await supabaseAuth.auth.resetPasswordForEmail(email, { redirectTo });
   return res.redirect('/login?message=Si el correo existe, enviamos enlace de recuperación.');
 });
@@ -643,13 +650,88 @@ app.post('/auth/logout', (req, res) => {
   res.clearCookie('sb_access_token', clearAuthCookieOptions());
   res.clearCookie('sb_refresh_token', clearAuthCookieOptions());
   res.clearCookie('csrf_token', clearCsrfCookieOptions());
-  return res.redirect('/login');
+  return res.redirect('/');
+});
+
+app.get('/reset-password', async (req, res) => {
+  if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/login');
+
+  const code = String(req.query.code || '');
+
+  if (code) {
+    // Exchange the PKCE code for a session, then redirect to the form (code out of URL)
+    const { data, error } = await supabaseAuth.auth.exchangeCodeForSession(code);
+    if (error || !data?.session) {
+      return renderPage(res, 'reset-password', {
+        title: 'Nueva contraseña — GTD_Neto',
+        hideAppNav: true,
+        message: 'El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.',
+      });
+    }
+    res.cookie('sb_access_token', data.session.access_token, authCookieOptions());
+    res.cookie('sb_refresh_token', data.session.refresh_token, authCookieOptions());
+    return res.redirect('/reset-password');
+  }
+
+  if (!req.cookies?.sb_access_token) {
+    return renderPage(res, 'reset-password', {
+      title: 'Nueva contraseña — GTD_Neto',
+      hideAppNav: true,
+      message: 'El enlace de recuperación ha expirado. Solicita uno nuevo desde el login.',
+    });
+  }
+
+  return renderPage(res, 'reset-password', {
+    title: 'Nueva contraseña — GTD_Neto',
+    hideAppNav: true,
+    message: null,
+  });
+});
+
+app.post('/auth/update-password', authLimiter, async (req, res) => {
+  if (!USE_SUPABASE || !supabaseAuth) return res.redirect('/login');
+
+  const accessToken = req.cookies?.sb_access_token;
+  const refreshToken = req.cookies?.sb_refresh_token;
+  if (!accessToken || !refreshToken) {
+    return res.redirect('/login?message=Sesión expirada. Solicita un nuevo enlace de recuperación.');
+  }
+
+  const password = String(req.body?.password || '');
+  if (!password || password.length < 6) {
+    return renderPage(res, 'reset-password', {
+      title: 'Nueva contraseña — GTD_Neto',
+      hideAppNav: true,
+      message: null,
+      flash: { error: 'La contraseña debe tener al menos 6 caracteres.' },
+    });
+  }
+
+  const { error: sessionError } = await supabaseAuth.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+  if (sessionError) {
+    return res.redirect('/login?message=Sesión expirada. Solicita un nuevo enlace de recuperación.');
+  }
+
+  const { error } = await supabaseAuth.auth.updateUser({ password });
+  if (error) {
+    return renderPage(res, 'reset-password', {
+      title: 'Nueva contraseña — GTD_Neto',
+      hideAppNav: true,
+      message: null,
+      flash: { error: error.message || 'No se pudo actualizar la contraseña.' },
+    });
+  }
+
+  res.clearCookie('sb_access_token', clearAuthCookieOptions());
+  res.clearCookie('sb_refresh_token', clearAuthCookieOptions());
+  return res.redirect('/login?message=Contraseña actualizada. Ya puedes iniciar sesión.');
 });
 
 app.use((req, res, next) => {
   const publicPaths = [
     '/', '/login', '/signup',
     '/auth/login', '/auth/signup', '/auth/forgot', '/auth/logout',
+    '/reset-password', '/auth/update-password',
     '/pricing', '/billing/webhook', '/billing/success', '/billing/cancel',
     '/healthz', '/favicon.ico', '/favicon.png',
   ];

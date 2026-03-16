@@ -16,24 +16,24 @@
   </form>
 
   <script nonce="<%= cspNonce %>">
-    document.getElementById('signupForm')?.addEventListener('submit', function(e) {
-      const btn = document.getElementById('signupBtn');
-      LoadingManager.show(btn);
-    });
-
-    setupFormValidation('signupForm', {
-      email: {
-        required: true,
-        email: true,
-        requiredMessage: 'El email es requerido',
-        emailMessage: 'Por favor ingresa un email válido'
-      },
-      password: {
-        required: true,
-        minLength: 6,
-        requiredMessage: 'La contraseña es requerida',
-        minLengthMessage: 'La contraseña debe tener al menos 6 caracteres'
-      }
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('signupForm')?.addEventListener('submit', function() {
+        LoadingManager.show(document.getElementById('signupBtn'));
+      });
+      setupFormValidation('signupForm', {
+        email: {
+          required: true,
+          email: true,
+          requiredMessage: 'El email es requerido',
+          emailMessage: 'Por favor ingresa un email válido'
+        },
+        password: {
+          required: true,
+          minLength: 6,
+          requiredMessage: 'La contraseña es requerida',
+          minLengthMessage: 'La contraseña debe tener al menos 6 caracteres'
+        }
+      });
     });
   </script>
 

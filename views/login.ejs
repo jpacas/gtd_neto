@@ -20,24 +20,24 @@
   </form>
 
   <script nonce="<%= cspNonce %>">
-    document.getElementById('loginForm')?.addEventListener('submit', function(e) {
-      const btn = document.getElementById('loginBtn');
-      LoadingManager.show(btn);
-    });
-
-    setupFormValidation('loginForm', {
-      email: {
-        required: true,
-        email: true,
-        requiredMessage: 'El email es requerido',
-        emailMessage: 'Por favor ingresa un email válido'
-      },
-      password: {
-        required: true,
-        minLength: 6,
-        requiredMessage: 'La contraseña es requerida',
-        minLengthMessage: 'La contraseña debe tener al menos 6 caracteres'
-      }
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('loginForm')?.addEventListener('submit', function() {
+        LoadingManager.show(document.getElementById('loginBtn'));
+      });
+      setupFormValidation('loginForm', {
+        email: {
+          required: true,
+          email: true,
+          requiredMessage: 'El email es requerido',
+          emailMessage: 'Por favor ingresa un email válido'
+        },
+        password: {
+          required: true,
+          minLength: 6,
+          requiredMessage: 'La contraseña es requerida',
+          minLengthMessage: 'La contraseña debe tener al menos 6 caracteres'
+        }
+      });
     });
   </script>
 
