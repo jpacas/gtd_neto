@@ -613,11 +613,11 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
     }
   }
 
-  // If Supabase returned a session (email confirmation disabled), auto-login
+  // If Supabase returned a session (email confirmation disabled), auto-login and show pricing
   if (signupData?.session) {
     res.cookie('sb_access_token', signupData.session.access_token, authCookieOptions());
     res.cookie('sb_refresh_token', signupData.session.refresh_token, authCookieOptions());
-    return res.redirect('/');
+    return res.redirect('/pricing?reason=new_account');
   }
 
   return res.redirect('/login?message=Cuenta creada. Revisa tu correo para confirmar.');
