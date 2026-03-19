@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Aplicación GTD simplificada para gestión de productividad" />
+  <meta name="description" content="GTD_Neto — el sistema GTD en español. Captura, procesa y actúa con claridad. Prueba gratis 14 días." />
   <meta name="theme-color" content="#2563eb" />
   <title><%= title %></title>
   <link rel="stylesheet" href="/public/css/styles.css" />
@@ -29,22 +29,29 @@
 
       <!-- Nav links -->
       <nav class="flex-1 px-2 py-3 flex flex-col gap-0.5 overflow-y-auto" aria-label="Navegación principal">
-        <a class="nav-link-mobile" href="/" data-page="/">🧭 Dashboard</a>
-        <a class="nav-link-mobile" href="/hoy" data-page="/hoy">🌅 Hoy</a>
+        <div class="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Capturar</div>
         <a class="nav-link-mobile" href="/collect" data-page="/collect">📥 Collect</a>
+
+        <div class="px-3 pt-3 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Procesar</div>
         <a class="nav-link-mobile" href="/hacer" data-page="/hacer">✅ Hacer</a>
         <a class="nav-link-mobile" href="/agendar" data-page="/agendar">🗓️ Agendar</a>
         <a class="nav-link-mobile" href="/delegar" data-page="/delegar">🤝 Delegar</a>
         <a class="nav-link-mobile" href="/desglosar" data-page="/desglosar">🧩 Desglosar</a>
         <a class="nav-link-mobile" href="/no-hacer" data-page="/no-hacer">🚫 No hacer</a>
-        <a class="nav-link-mobile" href="/terminado" data-page="/terminado">🎯 Terminado</a>
-        <a class="nav-link-mobile" href="/stats" data-page="/stats">📈 Stats</a>
+
+        <div class="px-3 pt-3 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Revisar</div>
         <a class="nav-link-mobile" href="/weekly-review" data-page="/weekly-review">
           📋 Revisión Semanal
           <% if (locals.daysSinceReview != null && locals.daysSinceReview > 7) { %>
             <span class="ml-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block align-middle"></span>
           <% } %>
         </a>
+        <a class="nav-link-mobile" href="/terminado" data-page="/terminado">🎯 Terminado</a>
+
+        <div class="px-3 pt-3 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Visión</div>
+        <a class="nav-link-mobile" href="/hoy" data-page="/hoy">🌅 Hoy</a>
+        <a class="nav-link-mobile" href="/" data-page="/">🧭 Dashboard</a>
+        <a class="nav-link-mobile" href="/stats" data-page="/stats">📈 Stats</a>
       </nav>
 
       <!-- Bottom: profile + logout -->
@@ -106,7 +113,7 @@
       </header>
 
       <!-- Content -->
-      <div class="flex-1 p-4 md:p-6">
+      <div class="flex-1 p-4 pb-24 md:p-6">
         <% if (flash?.error) { %>
           <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-800 text-sm border border-red-200"><%= flash.error %></div>
         <% } %>
