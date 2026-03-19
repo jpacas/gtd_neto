@@ -82,3 +82,26 @@ See `.env.example`. Key variables:
 ## Testing
 
 Tests use Node.js native `node:test` (no external framework). Test files live in `test/`. Run a single file with `node --test test/<file>.test.js`.
+
+## gstack
+
+Use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools.
+
+Install: `git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup`
+
+Available skills:
+- `/office-hours` - YC-style office hours / product brainstorming
+- `/plan-ceo-review` - CEO-level plan review
+- `/plan-eng-review` - Engineering plan review
+- `/plan-design-review` - Design plan review
+- `/design-consultation` - Design system consultation
+- `/review` - Code review
+- `/ship` - Ship code
+- `/browse` - Web browsing (use this for ALL web browsing)
+- `/qa` - QA testing + fix bugs
+- `/qa-only` - QA report only (no fixes)
+- `/design-review` - Visual QA and design polish
+- `/setup-browser-cookies` - Set up browser cookies
+- `/retro` - Retrospective
+- `/debug` - Systematic debugging
+- `/document-release` - Post-ship docs update
