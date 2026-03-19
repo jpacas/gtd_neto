@@ -148,18 +148,13 @@
 </div>
 <% } %>
 
-<!-- Quick Actions -->
-<div class="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4">
-  <h3 class="text-sm font-semibold mb-3 text-slate-700">⚡ Acciones rápidas</h3>
-  <div class="flex flex-wrap gap-2">
-    <a href="/collect" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition-colors">
-      📥 Ir a Collect
-    </a>
-    <a href="/hacer" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition-colors">
-      ✅ Ver todas (Hacer)
-    </a>
-    <a href="/agendar" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition-colors">
-      🗓️ Ver agenda completa
-    </a>
-  </div>
+<!-- Resumen del día -->
+<% if (totalEstimateMin > 0) { %>
+<div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+  <p class="text-sm text-blue-800">
+    Tienes <strong><%= totalEstimateMin %> minutos</strong> de trabajo planificado para hoy.
+    <% const hrs = Math.floor(totalEstimateMin / 60); const mins = totalEstimateMin % 60; %>
+    <% if (hrs > 0) { %><span class="text-blue-600">(≈ <%= hrs %>h <%= mins > 0 ? mins + ' min' : '' %>)</span><% } %>
+  </p>
 </div>
+<% } %>
