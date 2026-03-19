@@ -146,26 +146,52 @@
       root.querySelectorAll('.quick-edit').forEach((btn) => {
         if (btn.dataset.bound === '1') return;
         btn.dataset.bound = '1';
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Remove any existing popover
+          document.querySelectorAll('.qi-popover').forEach(p => p.remove());
+
           const field = btn.dataset.field;
           const current = Number(btn.dataset.value || 3);
-          const label = field === 'urgency' ? 'Urgencia (1-5)' : 'Importancia (1-5)';
-          const raw = await window.promptModal({
-            title: label,
-            defaultValue: String(current),
-            placeholder: 'Ingresa un valor entre 1 y 5',
-          });
-          if (raw == null) return;
-          const next = Number(raw);
-          if (!Number.isFinite(next)) return;
-          if (next < 1 || next > 5) return;
 
-          const form = btn.closest('form');
-          if (!form) return;
-          const hidden = form.querySelector(`input[name="${field}"]`);
-          if (!hidden) return;
-          hidden.value = String(next);
-          form.submit();
+          // Set position on container first so offsetTop/offsetLeft are correct
+          const container = btn.closest('.item-card') || btn.parentElement;
+          container.style.position = 'relative';
+
+          const popover = document.createElement('div');
+          popover.className = 'qi-popover absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg p-2 flex gap-1';
+          popover.style.top = (btn.offsetTop + btn.offsetHeight + 4) + 'px';
+          popover.style.left = btn.offsetLeft + 'px';
+
+          for (let v = 1; v <= 5; v++) {
+            const vBtn = document.createElement('button');
+            vBtn.type = 'button';
+            vBtn.textContent = String(v);
+            vBtn.className = 'w-7 h-7 text-xs rounded border font-semibold transition-colors ' +
+              (v === current ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-blue-50 hover:border-blue-300');
+            vBtn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              popover.remove();
+              const form = btn.closest('form');
+              if (!form) return;
+              const hidden = form.querySelector(`input[name="${field}"]`);
+              if (!hidden) return;
+              hidden.value = String(v);
+              form.submit();
+            });
+            popover.appendChild(vBtn);
+          }
+
+          container.appendChild(popover);
+
+          // Close on outside click
+          const close = (ev) => {
+            if (!popover.contains(ev.target)) {
+              popover.remove();
+              document.removeEventListener('click', close);
+            }
+          };
+          setTimeout(() => document.addEventListener('click', close), 0);
         });
       });
 
@@ -217,10 +243,10 @@
 
     // Highlight del botón activo
     document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'border-blue-300', 'dark:border-blue-700');
+      btn.classList.remove('bg-blue-100', 'border-blue-300');
     });
     if (evt?.target) {
-      evt.target.classList.add('bg-blue-100', 'dark:bg-blue-900', 'border-blue-300', 'dark:border-blue-700');
+      evt.target.classList.add('bg-blue-100', 'border-blue-300');
     }
 
     toast.info(`Mostrando ${visibleCount} item${visibleCount !== 1 ? 's' : ''}`, 1500);
