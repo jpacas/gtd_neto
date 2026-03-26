@@ -1,0 +1,114 @@
+<h2>3 enfoques para rediseñar Desglosar</h2>
+<p class="subtitle">Elige el que más te convenza — o combina elementos</p>
+
+<div class="cards">
+
+  <!-- Approach A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #f8fafc;">
+      <div style="font-size: 11px; color: #64748b; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Vista previa</div>
+
+      <!-- Subtask row mock -->
+      <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: white; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <div style="flex: 1; font-size: 13px; color: #334155;">Definir 3 entregables del proyecto</div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #d1fae5; border-radius: 6px; background: white; color: #059669; white-space: nowrap;">✓ Hecho</button>
+          <div style="position: relative; display: inline-block;">
+            <select style="font-size: 12px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #334155; cursor: pointer;">
+              <option value="">Enviar a…</option>
+              <option>✅ Hacer</option>
+              <option>🗓️ Agendar</option>
+              <option>🤝 Delegar</option>
+            </select>
+          </div>
+          <button style="font-size: 12px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #64748b;">✏️</button>
+          <button style="font-size: 12px; padding: 5px 8px; border: 1px solid #fecaca; border-radius: 6px; background: white; color: #ef4444;">×</button>
+        </div>
+      </div>
+
+      <!-- Sent subtask mock -->
+      <div style="border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; background: #f0fdf4; display: flex; align-items: center; gap: 8px;">
+        <div style="flex: 1; font-size: 13px; color: #334155;">Revisar presupuesto con el cliente</div>
+        <div style="font-size: 12px; color: #16a34a; white-space: nowrap;">Enviado → <a href="#" style="color: #2563eb; text-decoration: underline;">ver en Hacer</a></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Fix + mejoras mínimas</h3>
+      <p>Reemplaza los múltiples botones de destino por un <code>&lt;select&gt;</code> "Enviar a…". Corrige el bug, agranda botones, agrega link al item enviado. <strong>Cambio quirúrgico, menor riesgo.</strong></p>
+    </div>
+  </div>
+
+  <!-- Approach B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #f8fafc;">
+      <div style="font-size: 11px; color: #64748b; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Vista previa</div>
+
+      <!-- Subtask row with action menu -->
+      <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: white; margin-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="flex: 1; font-size: 13px; color: #334155;">Definir 3 entregables del proyecto</div>
+          <button style="font-size: 13px; padding: 4px 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #475569; font-weight: 600;">⋯</button>
+        </div>
+        <!-- Expanded action menu (simulated) -->
+        <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #d1fae5; border-radius: 6px; background: white; color: #059669;">✓ Hecho</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff; color: #2563eb;">✅ Hacer</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff; color: #2563eb;">🗓️ Agendar</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff; color: #2563eb;">🤝 Delegar</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #64748b;">✏️ Editar</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #fecaca; border-radius: 6px; background: white; color: #ef4444;">× Eliminar</button>
+        </div>
+      </div>
+
+      <!-- Collapsed subtask -->
+      <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: white; display: flex; align-items: center; gap: 8px;">
+        <div style="flex: 1; font-size: 13px; color: #334155;">Revisar presupuesto</div>
+        <button style="font-size: 13px; padding: 4px 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #475569; font-weight: 600;">⋯</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Menú de acciones expandible</h3>
+      <p>Cada subtarea tiene un botón "⋯" que expande las acciones. Vista compacta por defecto, acciones claras al expandir. <strong>UX más limpia pero requiere más JS.</strong></p>
+    </div>
+  </div>
+
+  <!-- Approach C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #f8fafc;">
+      <div style="font-size: 11px; color: #64748b; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Vista previa</div>
+
+      <!-- Subtask row with inline confirm -->
+      <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: white; margin-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="flex: 1; font-size: 13px; color: #334155;">Definir 3 entregables del proyecto</div>
+          <div style="display: flex; gap: 4px;">
+            <button style="font-size: 12px; padding: 4px 8px; border: 1px solid #d1fae5; border-radius: 6px; background: white; color: #059669;">✓</button>
+            <button style="font-size: 12px; padding: 4px 8px; border: 1px solid #dbeafe; border-radius: 6px; background: white; color: #3b82f6;">↗ Enviar</button>
+            <button style="font-size: 12px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #64748b;">✏️</button>
+            <button style="font-size: 12px; padding: 4px 8px; border: 1px solid #fecaca; border-radius: 6px; background: white; color: #ef4444;">×</button>
+          </div>
+        </div>
+        <!-- Confirm bar (appears after clicking ↗ Enviar) -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 8px; display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 12px; color: #64748b; margin-right: 4px;">¿Enviar a?</span>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #3b82f6; border-radius: 6px; background: #eff6ff; color: #2563eb; font-weight: 500;">✅ Hacer</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #475569;">🗓️ Agendar</button>
+          <button style="font-size: 12px; padding: 5px 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #475569;">🤝 Delegar</button>
+          <button style="font-size: 12px; padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #94a3b8;">✕</button>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; background: #f0fdf4; display: flex; align-items: center; gap: 8px;">
+        <div style="flex: 1; font-size: 13px; color: #334155; text-decoration: line-through; color: #94a3b8;">Revisar presupuesto</div>
+        <span style="font-size: 12px; color: #16a34a;">✅ Hacer ✓</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Confirmación inline al enviar</h3>
+      <p>Un botón "↗ Enviar" que abre una barra de confirmación con los destinos. Dos clics para enviar, elimina el bug. <strong>Flujo explícito e intencional.</strong></p>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top: 20px; font-size: 0.85em; color: var(--text-muted, #a6adc8); text-align: center;">Haz clic en el enfoque que prefieras, o dime en la terminal.</p>

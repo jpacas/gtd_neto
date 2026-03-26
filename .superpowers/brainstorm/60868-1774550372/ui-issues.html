@@ -1,0 +1,58 @@
+<h2>Problemas actuales en UI/UX de Desglosar</h2>
+<p class="subtitle">Lo que encontré revisando el código — antes de proponer soluciones</p>
+
+<div class="section">
+  <h3>🐛 Bug: "Bad destination"</h3>
+  <div style="background: var(--bg-card, #1e1e2e); border: 1px solid #f38ba8; border-radius: 8px; padding: 16px; margin-top: 10px;">
+    <div style="margin-bottom: 10px; font-size: 0.9em; color: var(--text-muted, #a6adc8);">El formulario de envío luce así en el HTML generado:</div>
+    <div style="background: #0d1117; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.82em; color: #e6edf3; line-height: 1.6;">
+      &lt;form method="POST" action="/desglosar/.../send"<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#f38ba8;">class="inline flex gap-1..."</span>&gt;<br>
+      &nbsp;&nbsp;&lt;input name="_csrf" .../&gt;<br>
+      &nbsp;&nbsp;&lt;button name="destination" value="hacer"&gt;✅ Hacer&lt;/button&gt;<br>
+      &nbsp;&nbsp;&lt;button name="destination" value="agendar"&gt;🗓️ Agendar&lt;/button&gt;<br>
+      &nbsp;&nbsp;&lt;button name="destination" value="delegar"&gt;🤝 Delegar&lt;/button&gt;<br>
+      &lt;/form&gt;
+    </div>
+    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="color: #f38ba8; font-size: 0.88em;">⚠️ <code>inline</code> y <code>flex</code> son clases incompatibles en Tailwind</div>
+      <div style="color: #f38ba8; font-size: 0.88em;">⚠️ Si el form se envía sin botón activo (Enter, tap ambiguo), <code>destination</code> llega vacío → <strong>"Bad destination"</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🎨 Problemas de UX</h3>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+
+    <div style="background: var(--bg-card, #1e1e2e); border: 1px solid #fab387; border-radius: 8px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 0.9em; color: #fab387; margin-bottom: 6px;">1. Botones diminutos y apretados</div>
+      <div style="font-size: 0.85em; color: var(--text-muted, #a6adc8);">Los botones de acción (✓ Hecho, ✅ Hacer, ✏️, ×) son <code>text-[11px]</code> y están juntos — difícil de tocar en móvil y fácil equivocarse.</div>
+      <div style="margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap;">
+        <button style="font-size: 11px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; background: white; color: #16a34a;">✓ Hecho</button>
+        <button style="font-size: 11px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; background: white;">✅ Hacer</button>
+        <button style="font-size: 11px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; background: white;">🗓️ Agendar</button>
+        <button style="font-size: 11px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; background: white;">🤝 Delegar</button>
+        <button style="font-size: 11px; padding: 3px 6px; border: 1px solid #e99; border-radius: 4px; background: white; color: #e11d48;">×</button>
+      </div>
+    </div>
+
+    <div style="background: var(--bg-card, #1e1e2e); border: 1px solid #fab387; border-radius: 8px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 0.9em; color: #fab387; margin-bottom: 6px;">2. Sin confirmación al enviar</div>
+      <div style="font-size: 0.85em; color: var(--text-muted, #a6adc8);">Clic en "✅ Hacer" envía la tarea inmediatamente sin confirmación. No hay forma de deshacer. El botón de eliminar (×) sí tiene confirm, pero enviar no.</div>
+    </div>
+
+    <div style="background: var(--bg-card, #1e1e2e); border: 1px solid #fab387; border-radius: 8px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 0.9em; color: #fab387; margin-bottom: 6px;">3. Sin feedback post-envío</div>
+      <div style="font-size: 0.85em; color: var(--text-muted, #a6adc8);">Cuando envías a Hacer, la subtarea muestra "Enviado a hacer ✓" — pero no hay link ni forma de ver esa tarea en la sección Hacer. Si quieres revisar su estado, tienes que navegar manualmente.</div>
+    </div>
+
+    <div style="background: var(--bg-card, #1e1e2e); border: 1px solid #fab387; border-radius: 8px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 0.9em; color: #fab387; margin-bottom: 6px;">4. Sin acceso directo desde el índice lateral</div>
+      <div style="font-size: 0.85em; color: var(--text-muted, #a6adc8);">Para crear un nuevo proyecto en Desglosar hay que pasar por Collect → enviar a Desglosar. No es intuitivo si ya sabes que quieres crear un proyecto.</div>
+    </div>
+
+  </div>
+</div>
+
+<p style="margin-top: 20px; font-size: 0.85em; color: var(--text-muted, #a6adc8); text-align: center;">Continuando en la terminal…</p>

@@ -119,6 +119,11 @@ describe('POST /billing/webhook validation', () => {
     );
     assert.equal(result.status, 500, 'Should 500 so Stripe retries the webhook');
   });
+
+  it('handles invoice.payment_succeeded as a known event (re-activates past_due users)', () => {
+    const result = handleWebhookEvent({ type: 'invoice.payment_succeeded', data: { object: { customer: 'cus_1' } } });
+    assert.equal(result.status, 200, 'invoice.payment_succeeded is a known event — should return 200');
+  });
 });
 
 // ─── Test helpers (pure logic, no HTTP server or Stripe SDK needed) ───────────
@@ -185,6 +190,7 @@ function handleWebhookEvent(event, options = {}) {
     'checkout.session.completed',
     'customer.subscription.updated',
     'customer.subscription.deleted',
+    'invoice.payment_succeeded',
     'invoice.payment_failed',
   ]);
 

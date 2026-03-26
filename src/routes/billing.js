@@ -38,6 +38,13 @@ export function createBillingRoutes({ renderPage, APP_URL }) {
 
     try {
       let sub = await getUserSubscription(userId);
+
+      // Guard: already subscribed → send to portal instead of creating a duplicate subscription
+      if (sub?.status === 'active') {
+        console.info('[billing/checkout] User already active, redirecting to portal', { userId });
+        return res.redirect('/billing/portal');
+      }
+
       let customerId = sub?.stripe_customer_id;
 
       if (!customerId) {
@@ -137,6 +144,17 @@ export function createBillingRoutes({ renderPage, APP_URL }) {
           console.info('[billing/webhook] subscription.deleted', { customerId, userId });
           break;
         }
+        case 'invoice.payment_succeeded': {
+          // Re-activate users who were past_due and successfully paid on Stripe retry
+          const customerId = obj.customer;
+          const customer = await stripe.customers.retrieve(customerId);
+          const userId = customer.metadata?.user_id;
+          if (userId) {
+            await upsertSubscription(userId, { status: 'active' });
+          }
+          console.info('[billing/webhook] invoice.payment_succeeded', { customerId, userId });
+          break;
+        }
         case 'invoice.payment_failed': {
           const customerId = obj.customer;
           const customer = await stripe.customers.retrieve(customerId);
@@ -189,7 +207,7 @@ export function createBillingRoutes({ renderPage, APP_URL }) {
       return res.redirect(303, session.url);
     } catch (err) {
       console.error('[billing/portal] Stripe error:', err.message);
-      return res.redirect('/');
+      return res.redirect('/pricing?error=billing_unavailable');
     }
   });
 
