@@ -169,6 +169,7 @@ function normalizeImportedItem(rawItem, sanitizeInput) {
     subtasks,
     sourceProjectId: toSanitizedString(rawItem.sourceProjectId, 64, sanitizeInput),
     sourceSubtaskId: toSanitizedString(rawItem.sourceSubtaskId, 64, sanitizeInput),
+    sourceProjectTitle: toSanitizedString(rawItem.sourceProjectTitle, 200, sanitizeInput),
     tags,
   };
 }

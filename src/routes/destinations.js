@@ -489,7 +489,8 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
         const text = String(subtask.text || '').trim();
         if (!text) return res.redirect('/desglosar');
         const base = newItem({ input: text });
-        let newTask = updateItem(base, { title: text, kind: 'action', list: destination, status: 'processed', sourceProjectId: id, sourceSubtaskId: subId });
+        const sourceProjectTitle = String(current.title || currentRaw.input || '').trim();
+        let newTask = updateItem(base, { title: text, kind: 'action', list: destination, status: 'processed', sourceProjectId: id, sourceSubtaskId: subId, sourceProjectTitle });
         if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
         subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
         const updatedProject = updateItem(currentRaw, withDesglosarMeta(currentRaw, { subtasks }));
@@ -509,7 +510,8 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
       const text = String(subtask.text || '').trim();
       if (!text) return res.redirect('/desglosar');
       const base = newItem({ input: text });
-      let newTask = updateItem(base, { title: text, kind: 'action', list: destination, status: 'processed', sourceProjectId: id, sourceSubtaskId: subId });
+      const sourceProjectTitle = String(current.title || db.items[idx].input || '').trim();
+      let newTask = updateItem(base, { title: text, kind: 'action', list: destination, status: 'processed', sourceProjectId: id, sourceSubtaskId: subId, sourceProjectTitle });
       if (destination === 'hacer') newTask = updateItem(newTask, withHacerMeta(newTask));
       subtasks[subIdx] = { ...subtask, status: 'sent', sentTo: destination, sentItemId: newTask.id };
       db.items[idx] = updateItem(current, withDesglosarMeta(current, { subtasks }));

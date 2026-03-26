@@ -114,6 +114,9 @@
         </form>
       </div>
 
+      <% if (it.sourceProjectTitle) { %>
+        <div class="text-[11px] text-slate-400 mt-0.5">🧩 <a href="/desglosar" class="hover:text-slate-600 transition-colors"><%= it.sourceProjectTitle %></a></div>
+      <% } %>
       <% if (!it.actionableOk) { %>
         <div class="text-[11px] text-red-700 mt-1"><%= it.actionableFeedback || 'Redacción poco accionable' %></div>
       <% } %>
