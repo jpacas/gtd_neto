@@ -91,26 +91,33 @@
                   <div class="flex-1 text-sm min-w-0 break-words <%= s.status === 'done' ? 'line-through text-slate-400' : 'dark:text-slate-200' %>"><%= s.text %></div>
                   <div class="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
                     <% if (s.status === 'sent') { %>
-                      <span class="text-xs text-green-700">Enviado a <%= s.sentTo %> ✓</span>
+                      <span class="text-xs text-green-700 flex items-center gap-1.5">
+                        <%= destIcons[s.sentTo] || '' %> <%= s.sentTo %>
+                        <a href="/<%= s.sentTo %>" class="text-blue-600 underline hover:text-blue-800 transition-colors">→ ver</a>
+                      </span>
                     <% } else if (s.status === 'done') { %>
                       <span class="text-xs text-slate-500">Hecho ✓</span>
                     <% } else { %>
                       <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/complete" class="inline">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                        <button class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-green-50 text-green-700 border-green-300 transition-colors">✓ Hecho</button>
+                        <button class="text-xs px-2.5 py-1.5 rounded border bg-white hover:bg-green-50 text-green-700 border-green-300 transition-colors">✓ Hecho</button>
                       </form>
-                      <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/send" class="inline flex gap-1 items-center flex-wrap">
+                      <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/send" class="flex gap-1 items-center">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                        <% for (const d of destinations) { %>
-                          <button type="submit" name="destination" value="<%= d.key %>" class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50 transition-colors"><%= destIcons[d.key] || '' %> <%= d.label %></button>
-                        <% } %>
+                        <select name="destination" class="text-xs border rounded-lg px-2 py-1.5 bg-white text-slate-700 border-blue-200 cursor-pointer">
+                          <option value="" disabled selected>Enviar a…</option>
+                          <% for (const d of destinations) { %>
+                            <option value="<%= d.key %>"><%= destIcons[d.key] || '' %> <%= d.label %></option>
+                          <% } %>
+                        </select>
+                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 transition-colors whitespace-nowrap">↗ Enviar</button>
                       </form>
                     <% } %>
                     <% if (s.status !== 'sent') { %>
                       <button
                         type="button"
                         onclick="toggleSubtaskEdit('<%= it.id %>', '<%= s.id %>')"
-                        class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-slate-50 transition-colors"
+                        class="text-xs px-2.5 py-1.5 rounded border bg-white hover:bg-slate-50 transition-colors"
                         title="Editar">✏️</button>
                     <% } %>
                     <form method="POST" action="/desglosar/<%= it.id %>/subtasks/<%= s.id %>/delete" class="inline subtask-delete-form-<%= s.id %>">
@@ -118,7 +125,7 @@
                       <button
                         type="button"
                         onclick="confirmSubtaskDelete('<%= s.id %>')"
-                        class="text-[11px] px-2 py-1 rounded border bg-white hover:bg-red-50 text-red-600 border-red-200 transition-colors"
+                        class="text-xs px-2.5 py-1.5 rounded border bg-white hover:bg-red-50 text-red-600 border-red-200 transition-colors"
                         title="Eliminar">×</button>
                     </form>
                   </div>

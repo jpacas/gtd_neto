@@ -476,7 +476,7 @@ export function createDestinationRoutes({ loadReqDb, loadReqItemsByList, loadReq
       const id = sanitizeIdParam(req.params.id, sanitizeInput);
       const subId = sanitizeIdParam(req.params.subId, sanitizeInput);
       const destination = String(req.body?.destination || '');
-      if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.status(400).send('Bad destination');
+      if (!['hacer', 'agendar', 'delegar'].includes(destination)) return res.redirect('/desglosar');
 
       if (isStoreSupabaseMode()) {
         const currentRaw = await loadReqItemById(req, id);
